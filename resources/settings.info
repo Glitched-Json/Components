@@ -1,0 +1,6 @@
+fps: 120
+uncappedFPS: true
+vSync: true
+
+depthTest: true
+antiAliasingSamples: 4

@@ -1,5 +1,6 @@
 package engine;
 
+import lombok.Getter;
 import org.joml.Vector3i;
 
 import java.util.*;
@@ -38,10 +39,12 @@ public final class Shader {
     private final String fileName;
     private final int shaderProgram;
     private final Map<String, Integer> uniformLocations = new HashMap<>();
+    private final Map<String, Integer> fields = new HashMap<>();
     private final List<int[]> layouts = new ArrayList<>();
-    private final Pattern layoutPattern = Pattern.compile("layout \\(location = (\\d+)\\) in (\\S+) \\w+(?:\\[(\\d+)])?;(.*//\\$Normalized)?");
+    private final Pattern layoutPattern = Pattern.compile("layout \\(location = (\\d+)\\) in (\\S+) (\\w+)(?:\\[(\\d+)])?;(?:.*//\\s*(\\$\\s*[a-zA-Z].*))?");
     private final Pattern variablePattern = Pattern.compile("//\\$var\\s+(?:(int|float)?\\s+)?([a-zA-Z]\\w*)\\s+(?:=\\s+(-?\\d+.?\\d*|Settings.[a-zA-Z]\\w*))?");
     private final int VAO, stride;
+    @Getter private int vertexSize;
 
     private Shader(String file) {
         String id = UUID.randomUUID().toString();
@@ -66,6 +69,20 @@ public final class Shader {
         stride = setVertexAttributes();
 
         findUniforms(code);
+    }
+
+    public int getFieldLocation(String field) {
+        if (fields.containsKey(field)) return fields.get(field);
+        return -1;
+    }
+
+    public int getLayoutOffset(int location) {
+        int offset = 0;
+        for (int[] layout: layouts) {
+            if (layout[0] == location) return offset;
+            offset += layout[1];
+        }
+        return offset;
     }
 
     public int getUniform(String uniform) {
@@ -159,16 +176,37 @@ public final class Shader {
     private void generateVAO(String code) {
         layouts.clear();
         Matcher matcher = layoutPattern.matcher(code);
+        vertexSize = 0;
         while (matcher.find()) {
             int location = Integer.parseInt(matcher.group(1));
+
             String type = matcher.group(2);
+
+            String name = matcher.group(3);
+
             int array;
-            try {array = Integer.parseInt(matcher.group(3));}
+            try {array = Integer.parseInt(matcher.group(4));}
             catch (NumberFormatException ignored) {array = 0;}
-            boolean normalized = matcher.group(4) != null;
+
+            String[] arguments;
+            try {
+                arguments = Arrays
+                        .stream(matcher.group(5).split("\\$"))
+                        .map(s -> s.trim().replaceAll("\\s+", "_"))
+                        .filter(s -> !s.isBlank())
+                        .map(s -> s.equalsIgnoreCase("normalized") ? "normalized" : s)
+                        .toArray(String[]::new);
+            } catch (NullPointerException ignored) {arguments = new String[0];}
+
+            fields.put(name, location);
+            for (String argument: arguments) {
+                if (argument.equals("normalized")) continue;
+                fields.put(argument, location);
+            }
 
             Vector3i info = decodeType(type);
-            layouts.add(new int[]{location, info.x, info.y, info.z, array, normalized ? 1 : 0});
+            layouts.add(new int[]{location, info.x, info.y, info.z, array, Arrays.asList(arguments).contains("normalized") ? 1 : 0});
+            vertexSize += info.x;
         }
         layouts.sort(Comparator.comparingInt(a -> a[0]));
     }

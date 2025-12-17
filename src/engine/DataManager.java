@@ -13,14 +13,20 @@ public final class DataManager {
     private static final Map<String, Float> settings = new HashMap<>();
     static {
         try {
-            Pattern pattern = Pattern.compile("\\s*([a-zA-Z]\\w*)\\s*:\\s*(\\d+(?:\\.\\d*)?)");
+            Pattern pattern = Pattern.compile("^\\s*([a-zA-Z][\\w ]*)\\s*[:=]\\s*((\\d+(?:\\.\\d*)?)|(true|false))", Pattern.CASE_INSENSITIVE);
             String line;
-            BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(ClassLoader.getSystemResourceAsStream("settings.txt"))));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(ClassLoader.getSystemResourceAsStream("settings.info"))));
+            float value;
             while ((line = reader.readLine()) != null) {
                 Matcher matcher = pattern.matcher(line);
-                if (matcher.find())
-                    try {settings.put(matcher.group(1), Float.parseFloat(matcher.group(2)));}
-                catch (NullPointerException | NumberFormatException ignored) {settings.put(matcher.group(1), 0f);}
+                if (matcher.find()) {
+                    try {value = switch (matcher.group(2)) {
+                        case "true" -> 1;
+                        case "false" -> 0;
+                        default -> Float.parseFloat(matcher.group(2));
+                    };} catch (NullPointerException | NumberFormatException ignored) {value = 0;}
+                    settings.put(matcher.group(1), value);
+                }
             }
         } catch (IOException ignored) {}
     }
@@ -43,5 +49,10 @@ public final class DataManager {
     public static float getSetting(String var) {
         if (settings.containsKey(var)) return settings.get(var);
         return 0;
+    }
+
+    public static boolean getFlag(String var) {
+        if (settings.containsKey(var)) return settings.get(var) != 0;
+        return false;
     }
 }

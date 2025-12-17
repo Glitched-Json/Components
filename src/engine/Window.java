@@ -9,11 +9,13 @@ import org.lwjgl.glfw.GLFWVidMode;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL.createCapabilities;
+import static org.lwjgl.opengl.GL11.glFlush;
 import static org.lwjgl.opengl.GL11.glViewport;
 
 @SuppressWarnings("unused")
 public final class Window {
     private static boolean initialized = false;
+    @Getter private static boolean vSync = true;
     private static long id;
     @Getter private static int width = 1280, height = 720;
     @Getter private static String title = "Window";
@@ -28,7 +30,9 @@ public final class Window {
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-        glfwWindowHint(GLFW_SAMPLES, 4);
+        if (DataManager.getFlag("antiAliasingSamples")) glfwWindowHint(GLFW_SAMPLES, (int) DataManager.getSetting("antiAliasingSamples"));
+        //noinspection AssignmentUsedAsCondition
+        glfwWindowHint(GLFW_DOUBLEBUFFER, (vSync = DataManager.getFlag("vSync")) ? GLFW_TRUE : GLFW_FALSE);
 
         GLFWVidMode mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         assert mode != null;
@@ -58,7 +62,7 @@ public final class Window {
                 InputManager.registerCursorPosition(new Vector2d(xPosition, yPosition)));
 
         glfwMakeContextCurrent(id);
-        glfwSwapInterval(1);
+        if (vSync) glfwSwapInterval(DataManager.getFlag("uncappedFPS") ? 0 : 1);
         glfwShowWindow(id);
 
         createCapabilities();
@@ -89,6 +93,11 @@ public final class Window {
     public static void iconify() { glfwIconifyWindow(id); }
     public static void maximize() { glfwMaximizeWindow(id); }
     public static void requestAttention() { glfwRequestWindowAttention(id); }
+
+    public static void frameUpdate() {
+        if (vSync) glfwSwapBuffers(id);
+        else glFlush();
+    }
 
     public static void cleanup() {
         if (!initialized) return;

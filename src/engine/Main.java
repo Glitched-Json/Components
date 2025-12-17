@@ -1,12 +1,14 @@
 package engine;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
+import java.text.DecimalFormat;
 import java.util.Objects;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
 
 public class Main {
     private Main() {}
@@ -18,27 +20,57 @@ public class Main {
     }
 
     private static void run() {
-        int VBO = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, new float[]{
-                -0.5f, -0.5f, 0, 1, 0, 0,
-                0.5f, -0.5f, 0, 0, 1, 0,
-                0, 0.5f, 0, 0, 0, 1,
-                -1, 1, 0, 1, 1, 1,
-                1, 1, 0, 1, 1, 1,
-                1, 0, 0, 1, 1, 1}
-                , GL_STATIC_DRAW);
-        Shader.get().bindVBO(VBO);
+        Model triangle = new Model("quad").generate();
+
+        DecimalFormat format = new DecimalFormat(",###");
+        double targetFPS = 1d / DataManager.getSetting("fps");
+        boolean uncappedFPS = DataManager.getFlag("uncappedFPS");
+
+        int clearMask = GL_COLOR_BUFFER_BIT;
+        if (DataManager.getFlag("depthTest")) clearMask |= GL_DEPTH_BUFFER_BIT;
+        else glDisable(GL_DEPTH_TEST);
+
+        double t = 0, tFPS = 0;
+        long start, end = System.nanoTime(), passedTime;
+        int fpsCounter = 0;
 
         while (Window.shouldNotClose()) {
-            Window.swapBuffers();
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            start = System.nanoTime();
+            passedTime = start - end;
+            end = start;
+            t += passedTime / (double) 1_000_000_000L;
+            tFPS += passedTime / (double) 1_000_000_000L;
 
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            if (Window.isVSync() || uncappedFPS) {
+                render(clearMask, (float) t, triangle);
+                t = 0;
+                fpsCounter++;
+            } else if (t >= targetFPS) {
+                render(clearMask, (float) t, triangle);
+                t %= targetFPS;
+                fpsCounter++;
+            }
 
-            InputManager.update();
-            glfwPollEvents();
+            if (tFPS >= 1.) {
+                tFPS %= 1.;
+                Window.setTitle("FPS: " + format.format(fpsCounter).replaceAll(",", "."));
+                fpsCounter = 0;
+            }
         }
+    }
+
+    private static void render(int clearMask, float t, Model triangle) {
+        Window.frameUpdate();
+        glClear(clearMask);
+
+        Camera.update(t);
+
+        glUniformMatrix4fv(Shader.get().getUniform("view"), false, Camera.getViewMatrix().get(BufferUtils.createFloatBuffer(16)));
+        glUniformMatrix4fv(Shader.get().getUniform("projection"), false, Camera.getProjectionMatrix().get(BufferUtils.createFloatBuffer(16)));
+        triangle.render();
+
+        glfwPollEvents();
+        InputManager.update();
     }
 
     private static void initialize() {
