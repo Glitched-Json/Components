@@ -6,8 +6,8 @@ layout (location = 1) in vec3 vCol; //$ Color
 
 out vec3 fCol;
 
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 view; //$ uniformView
+uniform mat4 projection; //$ uniformProjection
 
 void main() {
     gl_Position = projection * view * (vec4(vPos, 1.) + vec4(0, 0, -3, 0));

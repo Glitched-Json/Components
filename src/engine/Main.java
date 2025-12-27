@@ -1,6 +1,5 @@
 package engine;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
 import java.text.DecimalFormat;
@@ -8,7 +7,6 @@ import java.util.Objects;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL20.*;
 
 public class Main {
     private Main() {}
@@ -20,7 +18,7 @@ public class Main {
     }
 
     private static void run() {
-        Model triangle = new Model("quad").generate();
+        Model model = new Model("quad").generate();
 
         DecimalFormat format = new DecimalFormat(",###");
         double targetFPS = 1d / DataManager.getSetting("fps");
@@ -42,11 +40,11 @@ public class Main {
             tFPS += passedTime / (double) 1_000_000_000L;
 
             if (Window.isVSync() || uncappedFPS) {
-                render(clearMask, (float) t, triangle);
+                render(clearMask, (float) t, model);
                 t = 0;
                 fpsCounter++;
             } else if (t >= targetFPS) {
-                render(clearMask, (float) t, triangle);
+                render(clearMask, (float) t, model);
                 t %= targetFPS;
                 fpsCounter++;
             }
@@ -59,15 +57,14 @@ public class Main {
         }
     }
 
-    private static void render(int clearMask, float t, Model triangle) {
+    private static void render(int clearMask, float t, Model model) {
         Window.frameUpdate();
         glClear(clearMask);
 
         Camera.update(t);
 
-        glUniformMatrix4fv(Shader.get().getUniform("view"), false, Camera.getViewMatrix().get(BufferUtils.createFloatBuffer(16)));
-        glUniformMatrix4fv(Shader.get().getUniform("projection"), false, Camera.getProjectionMatrix().get(BufferUtils.createFloatBuffer(16)));
-        triangle.render();
+        Shader.get().applyUniforms();
+        model.render();
 
         glfwPollEvents();
         InputManager.update();

@@ -1,5 +1,6 @@
 package engine;
 
+import com.glitched.annotations.Uniform;
 import lombok.Getter;
 import lombok.Setter;
 import org.joml.Matrix4f;
@@ -24,11 +25,15 @@ public final class Camera {
         if (InputManager.isDown(keyRight)) position.add(speed * dt, 0, 0);
     }
 
-    public static Matrix4f getViewMatrix() {
-        return new Matrix4f().lookAt(position, new Vector3f(position).add(0, 0, -1), new Vector3f(0, 1, 0));
+    @SuppressWarnings("unused")
+    @Uniform("uniformView")
+    public static float[] getViewMatrix() {
+        return (new Matrix4f().lookAt(position, new Vector3f(position).add(0, 0, -1), new Vector3f(0, 1, 0))).get(new float[16]);
     }
 
-    public static Matrix4f getProjectionMatrix() {
-        return new Matrix4f().perspective((float)Math.toRadians(FOV), Window.getAspectRatio(), ZNear, ZFar);
+    @SuppressWarnings("unused")
+    @Uniform("uniformProjection")
+    public static float[] getProjectionMatrix() {
+        return (new Matrix4f().perspective((float)Math.toRadians(FOV), Window.getAspectRatio(), ZNear, ZFar)).get(new float[16]);
     }
 }

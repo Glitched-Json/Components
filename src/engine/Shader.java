@@ -1,12 +1,14 @@
 package engine;
 
+import com.glitched.uniforms.UniformMapper;
 import lombok.Getter;
-import org.joml.Vector3i;
+import org.joml.Vector4i;
 
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static engine.UniformFunctions.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
@@ -39,10 +41,14 @@ public final class Shader {
     private final String fileName;
     private final int shaderProgram;
     private final Map<String, Integer> uniformLocations = new HashMap<>();
+    private final Map<String, Integer> uniformFunctions = new HashMap<>();
     private final Map<String, Integer> fields = new HashMap<>();
     private final List<int[]> layouts = new ArrayList<>();
-    private final Pattern layoutPattern = Pattern.compile("layout \\(location = (\\d+)\\) in (\\S+) (\\w+)(?:\\[(\\d+)])?;(?:.*//\\s*(\\$\\s*[a-zA-Z].*))?");
+
+    private final Pattern layoutPattern = Pattern.compile("^\\s*layout \\(location = (\\d+)\\) in (\\S+) (\\w+)(?:\\[(\\d+)])?;(?:.*//\\s*(\\$\\s*[a-zA-Z].*))?", Pattern.MULTILINE);
     private final Pattern variablePattern = Pattern.compile("//\\$var\\s+(?:(int|float)?\\s+)?([a-zA-Z]\\w*)\\s+(?:=\\s+(-?\\d+.?\\d*|Settings.[a-zA-Z]\\w*))?");
+    private final Pattern uniformPattern = Pattern.compile("^\\s*uniform (\\w+) (\\w+)\\s*;(?:.*//\\s*(\\$\\s*[a-zA-Z].*))?", Pattern.MULTILINE);
+
     private final int VAO, stride;
     @Getter private int vertexSize;
 
@@ -51,8 +57,9 @@ public final class Shader {
         String code = DataManager.readResource("shaders/" + (fileName = file) + ".glsl");
         code = applyVariables(code);
 
+        String headerPattern = "//\\$(Vertex|Geometry|Fragment) Shader\\n";
         String[] shaderSourceCodes = code
-                .replaceAll("//\\$(Vertex|Geometry|Fragment) Shader\\n", id + "$1" + id)
+                .replaceAll(headerPattern, id + "$1" + id)
                 .split(id);
 
         shaderProgram = createProgram();
@@ -98,11 +105,34 @@ public final class Shader {
     }
 
     private void findUniforms(String file) {
-        Pattern pattern = Pattern.compile("uniform \\w+ (\\w+)");
-        Matcher matcher = pattern.matcher(file);
+        Matcher matcher = uniformPattern.matcher(file);
 
-        while (matcher.find())
-            uniformLocations.put(matcher.group(1), glGetUniformLocation(shaderProgram, matcher.group(1)));
+        while (matcher.find()) {
+            int uniformLocation = glGetUniformLocation(shaderProgram, matcher.group(2));
+            int uniformFunction = decodeType(matcher.group(1)).w;
+
+            uniformLocations.put(matcher.group(2), uniformLocation);
+            uniformFunctions.put(matcher.group(2), uniformFunction);
+
+            String[] arguments;
+            try {arguments = Arrays
+                    .stream(matcher.group(3).split("\\$"))
+                    .map(s -> s.trim().replaceAll("\\s+", "_"))
+                    .filter(s -> !s.isBlank())
+                    .toArray(String[]::new);
+            } catch (NullPointerException ignored) {arguments = new String[0];}
+
+            for (String argument: arguments) {
+                uniformLocations.put(argument, uniformLocation);
+                uniformFunctions.put(argument, uniformFunction);
+            }
+        }
+    }
+
+    public void applyUniforms() {
+        for (Map.Entry<String, Integer> entry: uniformFunctions.entrySet()) try {
+            Objects.requireNonNull(UniformFunctions.fromState(entry.getValue())).setUniform(getUniform(entry.getKey()), UniformMapper.get(entry.getKey()));
+        } catch (NullPointerException ignored) { System.out.println("debug"); }
     }
 
     private int createProgram() {
@@ -204,7 +234,7 @@ public final class Shader {
                 fields.put(argument, location);
             }
 
-            Vector3i info = decodeType(type);
+            Vector4i info = decodeType(type);
             layouts.add(new int[]{location, info.x, info.y, info.z, array, Arrays.asList(arguments).contains("normalized") ? 1 : 0});
             vertexSize += info.x;
         }
@@ -212,7 +242,7 @@ public final class Shader {
     }
 
     /** @noinspection SpellCheckingInspection*/
-    private Vector3i decodeType(String type) {
+    private Vector4i decodeType(String type) {
         int size = switch (type) {
             case "bool", "int", "float" -> 1;
             case "bvec2", "ivec2", "vec2" -> 2;
@@ -234,7 +264,21 @@ public final class Shader {
             case "float", "vec2", "vec3", "vec4", "mat2", "mat3", "mat4" -> GL_FLOAT;
             default -> 0;
         };
-        return new Vector3i(size, bytes, glType);
+        UniformFunctions uniformFunction = switch (type) {
+            case "bool", "int" -> UNIFORM_1I;
+            case "bvec2", "ivec2" -> UNIFORM_2I;
+            case "bvec3", "ivec3" -> UNIFORM_3I;
+            case "bvec4", "ivec4" -> UNIFORM_4I;
+            case "float" -> UNIFORM_1F;
+            case "vec2" -> UNIFORM_2F;
+            case "vec3" -> UNIFORM_3F;
+            case "vec4" -> UNIFORM_4F;
+            case "mat2" -> UNIFORM_2M;
+            case "mat3" -> UNIFORM_3M;
+            case "mat4" -> UNIFORM_4M;
+            default -> null;
+        };
+        return new Vector4i(size, bytes, glType, UniformFunctions.toState(uniformFunction));
     }
 
     private int setVertexAttributes() {
