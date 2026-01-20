@@ -1,5 +1,7 @@
 package engine;
 
+import lombok.Getter;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -14,25 +16,48 @@ import static org.lwjgl.opengl.GL15.*;
 
 public final class Model {
     private static final Pattern pattern = Pattern.compile("\\$\\s*(byte|short|integer|int|long|float|double)?\\s*([a-z].*)", Pattern.CASE_INSENSITIVE);
+    private static final Map<String, Map<String, Model>> models = new HashMap<>();
+
+    public static Model get(String model) {return get(model, Shader.get());}
+    public static Model get(String model, String shader) {return get(model, Shader.get(shader));}
+    public static Model get(String model, Shader shader) {
+        Map<String, Model> shaderMap = getShaderMap(shader);
+        if (shaderMap.containsKey(model)) return shaderMap.get(model);
+        Model m = new Model(model, shader);
+        shaderMap.put(model, m);
+        return m;
+    }
+    private static Map<String, Model> getShaderMap(Shader shader) {
+        if (models.containsKey(shader.fileName)) return models.get(shader.fileName);
+        Map<String, Model> map = new HashMap<>();
+        models.put(shader.fileName, map);
+        return map;
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+
     private final Map<String, List<Vector>> fields = new HashMap<>();
+    public final Shader shader;
     private int type = GL_POINTS;
     private int activeType = 4;
     private String activeParameter = null;
-    private final String fileName;
+    @Getter private final String fileName;
     private final int VBO;
     private int vertexCount = 0;
+    private boolean cullFront = false, cullBack = true;
 
-    public Model(String model) {
+    private Model(String model, Shader shader) {
         parseModel("models/" + (fileName = model) + ".glitchedObj");
         VBO = glGenBuffers();
-    }
 
-    public Model generate() {return generate(Shader.get());}
-    public Model generate(Shader shader) {
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, generateVertices(shader), GL_STATIC_DRAW);
         shader.bindVBO(VBO);
-        return this;
+        this.shader = shader;
+    }
+
+    public void bindVBO() {
+        shader.bindVBO(VBO);
     }
 
     private float[] generateVertices(Shader shader) {
@@ -60,6 +85,13 @@ public final class Model {
     }
 
     public void render() {
+        if (cullFront && cullBack) return;
+
+        if (cullFront || cullBack) {
+            glEnable(GL_CULL_FACE);
+            glCullFace(cullFront ? GL_FRONT : GL_BACK);
+        } else glDisable(GL_CULL_FACE);
+
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glDrawArrays(type, 0, vertexCount);
     }
@@ -70,7 +102,7 @@ public final class Model {
             String line;
             BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(ClassLoader.getSystemResourceAsStream(model))));
             while ((line = reader.readLine()) != null) {
-                if (line.isBlank()) continue;
+                if (line.isBlank() || line.startsWith("//")) continue;
                 if (line.startsWith("$$")) list = decode$$(line);
                 else if (line.startsWith("$")) list = decode$(line);
                 else decode(line, list);
@@ -79,7 +111,7 @@ public final class Model {
     }
 
     private List<Vector> decode$$(String line) {
-        type = switch (line.trim().toLowerCase().replaceFirst("\\$\\$\\s*(.*)", "$1").replaceFirst("\\s+", "_")) {
+        type = switch (line.trim().toLowerCase().replaceFirst("\\$\\$\\s*(.*)", "$1").replaceAll("\\s+", "_")) {
             case "points" -> GL_POINTS;
             case "lines" -> GL_LINES;
             case "line_loop" -> GL_LINE_LOOP;
@@ -95,6 +127,13 @@ public final class Model {
                 activeParameter = "Indices";
                 yield type;
             }
+
+            case "cull_true", "cull_enable", "culling_true", "culling_enable" -> { cullFront = false; cullBack = true; yield type; }
+            case "cull_false", "cull_disable", "culling_false", "culling_disable" -> { cullFront = cullBack = false; yield type; }
+            case "cull_back_false", "cull_back_disable" -> { cullBack = false; yield type; }
+            case "cull_back_true", "cull_back_enable" -> { cullBack = true; yield type; }
+            case "cull_front_false", "cull_front_disable" -> { cullFront = false; yield type; }
+            case "cull_front_true", "cull_front_enable" -> { cullFront = true; yield type; }
 
             default -> type;
         };

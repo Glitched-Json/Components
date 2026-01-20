@@ -38,7 +38,7 @@ public final class Shader {
 
     // -----------------------------------------------------------------------------------------------------------------
 
-    private final String fileName;
+    public final String fileName;
     private final int shaderProgram;
     private final Map<String, Integer> uniformLocations = new HashMap<>();
     private final Map<String, Integer> uniformFunctions = new HashMap<>();
@@ -129,10 +129,10 @@ public final class Shader {
         }
     }
 
-    public void applyUniforms() {
+    public void applyUniforms(Object instance) {
         for (Map.Entry<String, Integer> entry: uniformFunctions.entrySet()) try {
-            Objects.requireNonNull(UniformFunctions.fromState(entry.getValue())).setUniform(getUniform(entry.getKey()), UniformMapper.get(entry.getKey()));
-        } catch (NullPointerException ignored) { System.out.println("debug"); }
+            Objects.requireNonNull(UniformFunctions.fromState(entry.getValue())).setUniform(getUniform(entry.getKey()), UniformMapper.get(instance, entry.getKey()));
+        } catch (NullPointerException ignored) {}
     }
 
     private int createProgram() {

@@ -18,22 +18,22 @@ public final class Camera {
     public static final float FOV = 45, ZNear = 0.1f, ZFar = 1000f;
     @Setter private static float speed = 4f;
 
-    public static void update(float dt) {
-        if (InputManager.isDown(keyUp))    position.add(0, speed * dt, 0);
-        if (InputManager.isDown(keyDown))  position.sub(0, speed * dt, 0);
-        if (InputManager.isDown(keyLeft))  position.sub(speed * dt, 0, 0);
-        if (InputManager.isDown(keyRight)) position.add(speed * dt, 0, 0);
+    public static void update(double dt) {
+        if (InputManager.isDown(keyUp))    position.add(0, speed * (float) dt, 0);
+        if (InputManager.isDown(keyDown))  position.sub(0, speed * (float) dt, 0);
+        if (InputManager.isDown(keyLeft))  position.sub(speed * (float) dt, 0, 0);
+        if (InputManager.isDown(keyRight)) position.add(speed * (float) dt, 0, 0);
     }
 
     @SuppressWarnings("unused")
-    @Uniform("uniformView")
+    @Uniform("view")
     public static float[] getViewMatrix() {
-        return (new Matrix4f().lookAt(position, new Vector3f(position).add(0, 0, -1), new Vector3f(0, 1, 0))).get(new float[16]);
+        return new Matrix4f().lookAt(position, new Vector3f(position).add(0, 0, -1), new Vector3f(0, 1, 0)).get(new float[16]);
     }
 
     @SuppressWarnings("unused")
-    @Uniform("uniformProjection")
+    @Uniform("projection")
     public static float[] getProjectionMatrix() {
-        return (new Matrix4f().perspective((float)Math.toRadians(FOV), Window.getAspectRatio(), ZNear, ZFar)).get(new float[16]);
+        return new Matrix4f().perspective((float)Math.toRadians(FOV), Window.getAspectRatio(), ZNear, ZFar).get(new float[16]);
     }
 }

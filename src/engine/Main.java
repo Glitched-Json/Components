@@ -1,5 +1,6 @@
 package engine;
 
+import game.Square;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
 import java.text.DecimalFormat;
@@ -18,7 +19,7 @@ public class Main {
     }
 
     private static void run() {
-        Model model = new Model("quad").generate();
+        Entity entity = new Square();
 
         DecimalFormat format = new DecimalFormat(",###");
         double targetFPS = 1d / DataManager.getSetting("fps");
@@ -40,11 +41,11 @@ public class Main {
             tFPS += passedTime / (double) 1_000_000_000L;
 
             if (Window.isVSync() || uncappedFPS) {
-                render(clearMask, (float) t, model);
+                render(clearMask, t, entity);
                 t = 0;
                 fpsCounter++;
             } else if (t >= targetFPS) {
-                render(clearMask, (float) t, model);
+                render(clearMask, t, entity);
                 t %= targetFPS;
                 fpsCounter++;
             }
@@ -57,14 +58,14 @@ public class Main {
         }
     }
 
-    private static void render(int clearMask, float t, Model model) {
+    private static void render(int clearMask, double t, Entity entity) {
         Window.frameUpdate();
         glClear(clearMask);
 
         Camera.update(t);
 
-        Shader.get().applyUniforms();
-        model.render();
+        entity.render();
+        entity.update(t);
 
         glfwPollEvents();
         InputManager.update();
