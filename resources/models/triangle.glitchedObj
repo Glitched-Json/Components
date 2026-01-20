@@ -1,9 +1,10 @@
+$$ Cull Disable
 $$ Triangles
 
 $ Position
 -0.5 -0.5 0
  0.5 -0.5 0
- 0    0.5 0
+ 0    0   0
 
 $ Color
 1 0 0

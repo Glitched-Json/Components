@@ -41,8 +41,6 @@ public abstract class Entity {
 
     @Override
     public String toString() {
-        return """
-               Model: %s
-               """.formatted(model.getFileName());
+        return model.toString();
     }
 }

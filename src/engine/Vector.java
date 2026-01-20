@@ -2,6 +2,7 @@ package engine;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @SuppressWarnings("unused")
 public final class Vector {
@@ -153,4 +154,21 @@ public final class Vector {
                 }).toArray());
     }
 
+    @Override
+    public boolean equals(Object object) {
+        if (object == null || getClass() != object.getClass()) return false;
+
+        Vector vector = (Vector) object;
+        for (int i=0; i<Math.max(size, vector.size); i++)
+            if (!Objects.equals(get(i), vector.get(i))) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = size;
+        result = 31 * result + Arrays.hashCode(values);
+        result = 31 * result + type;
+        return result;
+    }
 }

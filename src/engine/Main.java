@@ -20,6 +20,7 @@ public class Main {
 
     private static void run() {
         Entity entity = new Square();
+        System.out.println(entity);
 
         DecimalFormat format = new DecimalFormat(",###");
         double targetFPS = 1d / DataManager.getSetting("fps");
@@ -58,14 +59,13 @@ public class Main {
         }
     }
 
-    private static void render(int clearMask, double t, Entity entity) {
+    private static void render(int clearMask, double t, Entity... entity) {
         Window.frameUpdate();
         glClear(clearMask);
 
         Camera.update(t);
 
-        entity.render();
-        entity.update(t);
+        for (Entity e: entity) { e.render(); e.update(t); }
 
         glfwPollEvents();
         InputManager.update();

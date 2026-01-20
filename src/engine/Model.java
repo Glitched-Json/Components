@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL11C.GL_POINTS;
@@ -45,13 +46,19 @@ public final class Model {
     private final int VBO;
     private int vertexCount = 0;
     private boolean cullFront = false, cullBack = true;
+    private int[] indicesBuffer;
+    private float[] verticesBuffer;
 
     private Model(String model, Shader shader) {
         parseModel("models/" + (fileName = model) + ".glitchedObj");
-        VBO = glGenBuffers();
+        generateVertices(shader);
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, generateVertices(shader), GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO = glGenBuffers());
+        glBufferData(GL_ARRAY_BUFFER, verticesBuffer, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glGenBuffers()); // EBO
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW);
+
         shader.bindVBO(VBO);
         this.shader = shader;
     }
@@ -60,40 +67,81 @@ public final class Model {
         shader.bindVBO(VBO);
     }
 
-    private float[] generateVertices(Shader shader) {
+    private void generateVertices(Shader shader) {
         List<String> sortedFields = new ArrayList<>(fields.keySet());
-        vertexCount = sortedFields.stream().mapToInt(s -> fields.get(s).size()).min().orElse(0);
         int vertexSize = shader.getVertexSize();
 
         List<Vector> buffer = new ArrayList<>();
-        for (int i = 0; i<vertexCount; i++) {
-            Vector v = Vector.ofSize(vertexSize);
-            for (String field: sortedFields) {
-                Vector v2 = fields.get(field).get(i);
-                int offset = shader.getLayoutOffset(shader.getFieldLocation(field));
-                for (int j=0; j<v2.size(); j++)
-                    v.set(offset+j, v2.get(j));
+        List<Integer> indices = new ArrayList<>();
+        Map<Vector, Integer> seen = new HashMap<>();
+
+        int counter = 0;
+        if (fields.containsKey("Indices")) {
+            vertexCount = fields.get("Indices").size();
+            for (Vector index: fields.get("Indices")) {
+                if (seen.containsKey(index)) {
+                    indices.add(seen.get(index));
+                    continue;
+                }
+                indices.add(counter);
+                seen.put(index, counter++);
+
+                int i = 0;
+                Vector v = Vector.ofSize(vertexSize);
+                for (String field: sortedFields) {
+                    if (field.equals("Indices")) continue;
+
+                    int ind = 0;
+                    try { ind = index.getInt(i++); } catch (IndexOutOfBoundsException ignored) {}
+
+                    Vector v2 = new Vector();
+                    try { v2 = fields.get(field).get(ind); } catch (IndexOutOfBoundsException ignored) {}
+
+                    int offset = shader.getLayoutOffset(shader.getFieldLocation(field));
+                    for (int j=0; j<v2.size(); j++)
+                        v.set(offset+j, v2.get(j));
+                }
+                buffer.add(v);
             }
-            buffer.add(v);
+        } else {
+            vertexCount = sortedFields.stream().mapToInt(s -> fields.get(s).size()).max().orElse(0);
+            for (int i = 0; i<vertexCount; i++) {
+                Vector v = Vector.ofSize(vertexSize);
+                for (String field: sortedFields) {
+                    Vector v2;
+                    try { v2 = fields.get(field).get(i); }
+                    catch (IndexOutOfBoundsException ignored) { v2 = new Vector(); }
+
+                    int offset = shader.getLayoutOffset(shader.getFieldLocation(field));
+                    for (int j=0; j<v2.size(); j++)
+                        v.set(offset+j, v2.get(j));
+                }
+
+                if (seen.containsKey(v)) {
+                    indices.add(seen.get(v));
+                    continue;
+                }
+                indices.add(counter);
+                seen.put(v, counter++);
+                buffer.add(v);
+            }
         }
 
-        float[] result = new float[vertexSize * vertexCount];
-        for (int i=0; i<buffer.size(); i++)
-            for (int j = 0; j< vertexSize; j++)
-                result[i* vertexSize +j] = buffer.get(i).getFloat(j);
-        return result;
+        double[] flattened = buffer.stream().map(Vector::getDoubleArray).flatMapToDouble(Arrays::stream).toArray();
+        verticesBuffer = new float[flattened.length];
+        IntStream.range(0, flattened.length).forEach(i -> verticesBuffer[i] = (float) flattened[i]);
+
+        this.indicesBuffer = indices.stream().mapToInt(i->i).toArray();
     }
 
     public void render() {
-        if (cullFront && cullBack) return;
-
         if (cullFront || cullBack) {
             glEnable(GL_CULL_FACE);
             glCullFace(cullFront ? GL_FRONT : GL_BACK);
         } else glDisable(GL_CULL_FACE);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glDrawArrays(type, 0, vertexCount);
+        glDrawElements(type, vertexCount, GL_UNSIGNED_INT, 0);
     }
 
     private void parseModel(String model) {
@@ -128,12 +176,9 @@ public final class Model {
                 yield type;
             }
 
-            case "cull_true", "cull_enable", "culling_true", "culling_enable" -> { cullFront = false; cullBack = true; yield type; }
-            case "cull_false", "cull_disable", "culling_false", "culling_disable" -> { cullFront = cullBack = false; yield type; }
-            case "cull_back_false", "cull_back_disable" -> { cullBack = false; yield type; }
-            case "cull_back_true", "cull_back_enable" -> { cullBack = true; yield type; }
-            case "cull_front_false", "cull_front_disable" -> { cullFront = false; yield type; }
-            case "cull_front_true", "cull_front_enable" -> { cullFront = true; yield type; }
+            case "cull_disable", "culling_disable" -> { cullFront = cullBack = false; yield type; }
+            case "cull_back", "culling_back" -> { cullBack = true; cullFront = false; yield type; }
+            case "cull_front", "culling_front" -> { cullBack = false; cullFront = true; yield type; }
 
             default -> type;
         };
@@ -168,7 +213,11 @@ public final class Model {
 
         String[] vectors = line.trim().split("\\|");
         for (String v: vectors)
-            list.add(new Vector(Arrays.stream(v.trim().split("\\s+")).map(Float::parseFloat).toArray(Float[]::new)).setType(activeType));
+            list.add(new Vector(Arrays.stream(v.trim().split("\\s+"))
+                    .map(s -> s.isBlank() ? "0" : s)
+                    .map(Float::parseFloat)
+                    .toArray(Float[]::new)
+            ).setType(activeType));
     }
 
     private List<Vector> getField() {
