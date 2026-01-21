@@ -14,11 +14,11 @@ public final class Camera {
     public static int keyLeft  = GLFW_KEY_A;
     public static int keyRight = GLFW_KEY_D;
 
-    @Getter private static final Vector3f position = new Vector3f(0f, 0f, 0f);
-    public static final float FOV = 45, ZNear = 0.1f, ZFar = 1000f;
-    @Setter private static float speed = 4f;
+    @Getter private final Vector3f position = new Vector3f(0f, 0f, 0f);
+    public final float FOV = 45, ZNear = 0.1f, ZFar = 1000f;
+    @Setter private float speed = 4f;
 
-    public static void update(double dt) {
+    public void update(double dt) {
         if (InputManager.isDown(keyUp))    position.add(0, speed * (float) dt, 0);
         if (InputManager.isDown(keyDown))  position.sub(0, speed * (float) dt, 0);
         if (InputManager.isDown(keyLeft))  position.sub(speed * (float) dt, 0, 0);
@@ -27,13 +27,13 @@ public final class Camera {
 
     @SuppressWarnings("unused")
     @Uniform("view")
-    public static float[] getViewMatrix() {
+    public float[] getViewMatrix() {
         return new Matrix4f().lookAt(position, new Vector3f(position).add(0, 0, -1), new Vector3f(0, 1, 0)).get(new float[16]);
     }
 
     @SuppressWarnings("unused")
     @Uniform("projection")
-    public static float[] getProjectionMatrix() {
+    public float[] getProjectionMatrix() {
         return new Matrix4f().perspective((float)Math.toRadians(FOV), Window.getAspectRatio(), ZNear, ZFar).get(new float[16]);
     }
 }

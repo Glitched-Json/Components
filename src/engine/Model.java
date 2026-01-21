@@ -15,6 +15,7 @@ import static org.lwjgl.opengl.GL11C.GL_POINTS;
 import static org.lwjgl.opengl.GL11C.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL15.*;
 
+@SuppressWarnings("unused")
 public final class Model {
     private static final Pattern pattern = Pattern.compile("\\$\\s*(byte|short|integer|int|long|float|double)?\\s*([a-z].*)", Pattern.CASE_INSENSITIVE);
     private static final Map<String, Map<String, Model>> models = new HashMap<>();
@@ -35,6 +36,32 @@ public final class Model {
         return map;
     }
 
+    public static void remove(String model) {remove(model, null, true);}
+    public static void remove(String model, String shader) {remove(model, shader, false);}
+    public static void remove(String model, Shader shader) {remove(model, shader.fileName, false);}
+    private static void remove(String model, String shader, boolean bypassShader) {
+        if (!models.containsKey(model)) return;
+        Map<String, Model> map = models.get(model);
+        if (bypassShader) {
+            for (Model m: map.values()) m.cleanupBuffers();
+            models.remove(model);
+        } else if (map.containsKey(shader)) {
+            Model m = map.get(shader);
+            m.cleanupBuffers();
+            map.remove(shader);
+            if (map.isEmpty()) models.remove(model);
+        }
+    }
+
+    public static void cleanup() {
+        if (!Main.isCleanup()) return;
+
+        for (Map<String, Model> map: models.values())
+            for (Model m: map.values())
+                m.cleanupBuffers();
+        models.clear();
+    }
+
     // -----------------------------------------------------------------------------------------------------------------
 
     private final Map<String, List<Vector>> fields = new HashMap<>();
@@ -43,9 +70,9 @@ public final class Model {
     private int activeType = 4;
     private String activeParameter = null;
     @Getter private final String fileName;
-    private final int VBO;
+    private final int VBO, EBO;
     private int vertexCount = 0;
-    private boolean cullFront = false, cullBack = true;
+    private boolean cullFront = false, cullBack = true, active = true;
     private int[] indicesBuffer;
     private float[] verticesBuffer;
 
@@ -56,15 +83,40 @@ public final class Model {
         glBindBuffer(GL_ARRAY_BUFFER, VBO = glGenBuffers());
         glBufferData(GL_ARRAY_BUFFER, verticesBuffer, GL_STATIC_DRAW);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glGenBuffers()); // EBO
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO = glGenBuffers());
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW);
 
-        shader.bindVBO(VBO);
         this.shader = shader;
     }
 
     public void bindVBO() {
+        if (!active) return;
+
         shader.bindVBO(VBO);
+    }
+
+    public void render() {
+        if (!active) return;
+
+        if (cullFront || cullBack) {
+            glEnable(GL_CULL_FACE);
+            glCullFace(cullFront ? GL_FRONT : GL_BACK);
+        } else glDisable(GL_CULL_FACE);
+
+        // glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        shader.bind();
+        bindVBO();
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+        glDrawElements(type, vertexCount, GL_UNSIGNED_INT, 0);
+    }
+
+    private void cleanupBuffers() {
+        if (!active) return;
+        active = false;
+
+        glDeleteBuffers(VBO);
+        glDeleteBuffers(EBO);
     }
 
     private void generateVertices(Shader shader) {
@@ -132,16 +184,6 @@ public final class Model {
         IntStream.range(0, flattened.length).forEach(i -> verticesBuffer[i] = (float) flattened[i]);
 
         this.indicesBuffer = indices.stream().mapToInt(i->i).toArray();
-    }
-
-    public void render() {
-        if (cullFront || cullBack) {
-            glEnable(GL_CULL_FACE);
-            glCullFace(cullFront ? GL_FRONT : GL_BACK);
-        } else glDisable(GL_CULL_FACE);
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glDrawElements(type, vertexCount, GL_UNSIGNED_INT, 0);
     }
 
     private void parseModel(String model) {
@@ -245,6 +287,7 @@ public final class Model {
             case GL_QUAD_STRIP -> "Quad Strip";
             default -> "Undefined";
         });
+        lines.add("Status: " + (active ? "Active" : "Inactive"));
 
         for (Map.Entry<String, List<Vector>> entry: fields.entrySet())
             lines.add(entry.getKey() + ": " + entry.getValue().toString().replaceFirst("\\[(.*)]", "$1"));

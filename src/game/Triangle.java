@@ -2,9 +2,9 @@ package game;
 
 import engine.Entity;
 
-public class Square extends Entity {
-    public Square(Number x, Number y, Number z) {
-        super("quad", "shader");
+public class Triangle extends Entity {
+    public Triangle(Number x, Number y, Number z) {
+        super("triangle", "inverse_shader");
         position.set(x.floatValue(), y.floatValue(), z.floatValue());
     }
 

@@ -100,7 +100,7 @@ public final class Window {
     }
 
     public static void cleanup() {
-        if (!initialized) return;
+        if (!initialized || !Main.isCleanup()) return;
         initialized = false;
 
         glfwFreeCallbacks(id);

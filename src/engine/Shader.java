@@ -31,8 +31,12 @@ public final class Shader {
     }
 
     public static void cleanup() {
-        for (Shader shader: shaders.values())
+        if (!Main.isCleanup()) return;
+
+        for (Shader shader: shaders.values()) {
             glDeleteProgram(shader.shaderProgram);
+            glDeleteVertexArrays(shader.VAO);
+        }
         shaders.clear();
     }
 
@@ -325,13 +329,18 @@ public final class Shader {
     }
 
     public void bind() {
+        if (activeShader == this) return;
+
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
         enableAttributes();
         activeShader = this;
+        applyUniforms(Scene.get().getCamera());
     }
 
     public void unbind() {
+        if (activeShader != this) return;
+
         glUseProgram(0);
         disableAttributes();
         glBindVertexArray(0);

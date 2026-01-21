@@ -43,4 +43,7 @@ public abstract class Entity {
     public String toString() {
         return model.toString();
     }
+
+    public void onDestroy() {}
+    public void onCreate() {}
 }

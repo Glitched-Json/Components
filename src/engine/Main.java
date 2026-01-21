@@ -1,6 +1,7 @@
 package engine;
 
-import game.Square;
+import game.Game;
+import lombok.Getter;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
 import java.text.DecimalFormat;
@@ -10,6 +11,8 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 
 public class Main {
+    @Getter private static boolean cleanup = false;
+
     private Main() {}
 
     public static void main(String[] args) {
@@ -19,9 +22,6 @@ public class Main {
     }
 
     private static void run() {
-        Entity entity = new Square();
-        System.out.println(entity);
-
         DecimalFormat format = new DecimalFormat(",###");
         double targetFPS = 1d / DataManager.getSetting("fps");
         boolean uncappedFPS = DataManager.getFlag("uncappedFPS");
@@ -42,11 +42,11 @@ public class Main {
             tFPS += passedTime / (double) 1_000_000_000L;
 
             if (Window.isVSync() || uncappedFPS) {
-                render(clearMask, t, entity);
+                render(clearMask, t);
                 t = 0;
                 fpsCounter++;
             } else if (t >= targetFPS) {
-                render(clearMask, t, entity);
+                render(clearMask, t);
                 t %= targetFPS;
                 fpsCounter++;
             }
@@ -59,13 +59,12 @@ public class Main {
         }
     }
 
-    private static void render(int clearMask, double t, Entity... entity) {
+    private static void render(int clearMask, double t) {
         Window.frameUpdate();
         glClear(clearMask);
 
-        Camera.update(t);
-
-        for (Entity e: entity) { e.render(); e.update(t); }
+        Scene.get().update(t);
+        Scene.get().render();
 
         glfwPollEvents();
         InputManager.update();
@@ -77,11 +76,16 @@ public class Main {
 
         Window.initialize();
         Shader.get("shader").bind();
+
+        Game.initialize();
     }
 
     private static void cleanup() {
+        cleanup = true;
+
         Window.cleanup();
         Shader.cleanup();
+        Model.cleanup();
 
         glfwTerminate();
         Objects.requireNonNull(glfwSetErrorCallback(null)).free();
