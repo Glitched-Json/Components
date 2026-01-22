@@ -7,6 +7,7 @@ import org.joml.Vector3f;
 @SuppressWarnings("unused")
 public abstract class Entity {
     protected Model model;
+    private final String modelName;
     protected final Vector3f
             position = new Vector3f(0),
             rotation = new Vector3f(0),
@@ -17,6 +18,7 @@ public abstract class Entity {
     public Entity(String model, String shader) {this(Model.get(model, shader));}
     public Entity(Model model) {
         this.model = model;
+        modelName = model.getName();
     }
 
     public void update(double dt) {}
@@ -27,6 +29,9 @@ public abstract class Entity {
         model.shader.applyUniforms(this);
         model.render();
     }
+
+    public void setShader(Shader shader) { model = Model.get(modelName, shader); }
+    public void setShader(String shader) { model = Model.get(modelName, shader); }
 
     @Uniform
     private float[] transform() {

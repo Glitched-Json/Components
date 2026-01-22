@@ -4,6 +4,7 @@ import lombok.Getter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -17,6 +18,7 @@ import static org.lwjgl.opengl.GL15.*;
 
 @SuppressWarnings("unused")
 public final class Model {
+    private static final String INDICES_FIELD = "Indices", TEXTURES_FIELD = "Texture";
     private static final Pattern pattern = Pattern.compile("\\$\\s*(byte|short|integer|int|long|float|double)?\\s*([a-z].*)", Pattern.CASE_INSENSITIVE);
     private static final Map<String, Map<String, Model>> models = new HashMap<>();
 
@@ -54,7 +56,7 @@ public final class Model {
     }
 
     public static void cleanup() {
-        if (!Main.isCleanup()) return;
+        if (Main.isRunning()) return;
 
         for (Map<String, Model> map: models.values())
             for (Model m: map.values())
@@ -69,7 +71,7 @@ public final class Model {
     private int type = GL_POINTS;
     private int activeType = 4;
     private String activeParameter = null;
-    @Getter private final String fileName;
+    @Getter private final String fileName, name;
     private final int VBO, EBO;
     private int vertexCount = 0;
     private boolean cullFront = false, cullBack = true, active = true;
@@ -77,7 +79,7 @@ public final class Model {
     private float[] verticesBuffer;
 
     private Model(String model, Shader shader) {
-        parseModel("models/" + (fileName = model) + ".glitchedObj");
+        if ((fileName = parseModel(name = model)) == null) throw new RuntimeException("File \"models/%s\" not found or supported.".formatted(model));
         generateVertices(shader);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO = glGenBuffers());
@@ -128,9 +130,9 @@ public final class Model {
         Map<Vector, Integer> seen = new HashMap<>();
 
         int counter = 0;
-        if (fields.containsKey("Indices")) {
-            vertexCount = fields.get("Indices").size();
-            for (Vector index: fields.get("Indices")) {
+        if (fields.containsKey(INDICES_FIELD)) {
+            vertexCount = fields.get(INDICES_FIELD).size();
+            for (Vector index: fields.get(INDICES_FIELD)) {
                 if (seen.containsKey(index)) {
                     indices.add(seen.get(index));
                     continue;
@@ -149,9 +151,11 @@ public final class Model {
                     Vector v2 = new Vector();
                     try { v2 = fields.get(field).get(ind); } catch (IndexOutOfBoundsException ignored) {}
 
-                    int offset = shader.getLayoutOffset(shader.getFieldLocation(field));
+                    int layoutID = shader.getFieldLocation(field);
+                    int offset = shader.getLayoutOffset(layoutID);
+                    Vector inversion = shader.getInversionVector(layoutID);
                     for (int j=0; j<v2.size(); j++)
-                        v.set(offset+j, v2.get(j));
+                        v.set(offset+j, inversion.getInt(j) == 1 ? 1 - v2.get(j).doubleValue() : v2.get(j));
                 }
                 buffer.add(v);
             }
@@ -186,18 +190,29 @@ public final class Model {
         this.indicesBuffer = indices.stream().mapToInt(i->i).toArray();
     }
 
-    private void parseModel(String model) {
+    private String parseModel(String model) {
         try {
             List<Vector> list = null;
-            String line;
-            BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(ClassLoader.getSystemResourceAsStream(model))));
-            while ((line = reader.readLine()) != null) {
-                if (line.isBlank() || line.startsWith("//")) continue;
-                if (line.startsWith("$$")) list = decode$$(line);
-                else if (line.startsWith("$")) list = decode$(line);
-                else decode(line, list);
-            }
+            String line, file;
+
+            InputStream stream = ClassLoader.getSystemResourceAsStream(file = "models/%s".formatted(model));
+            if (stream == null) stream = ClassLoader.getSystemResourceAsStream(file = "models/%s.glitchedObj".formatted(model));
+            if (stream == null) return null;
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+            if (file.endsWith(".glitchedObj")) {
+                // Glitched OBJ format
+                while ((line = reader.readLine()) != null) {
+                    if (line.isBlank() || line.startsWith("//")) continue;
+                    if (line.startsWith("$$")) list = decode$$(line);
+                    else if (line.startsWith("$")) list = decode$(line);
+                    else decode(line, list);
+                }
+            } else return null;
+
+            return file;
         } catch (NullPointerException | IOException ignored) {}
+        return null;
     }
 
     private List<Vector> decode$$(String line) {
@@ -214,7 +229,12 @@ public final class Model {
 
             case "index", "indices" -> {
                 activeType = 2;
-                activeParameter = "Indices";
+                activeParameter = INDICES_FIELD;
+                yield type;
+            }
+            case "texture", "textures", "uv" -> {
+                activeType = 4;
+                activeParameter = TEXTURES_FIELD;
                 yield type;
             }
 
@@ -244,8 +264,10 @@ public final class Model {
         activeParameter = matcher.group(2).trim().replaceAll("\\s+", "_");
         if (activeParameter.equalsIgnoreCase("Indices") || activeParameter.equalsIgnoreCase("Index")) {
             activeType = 2;
-            activeParameter = "Indices";
+            activeParameter = INDICES_FIELD;
         }
+        if (activeParameter.equalsIgnoreCase("Texture") || activeParameter.equalsIgnoreCase("Textures") || activeParameter.equalsIgnoreCase("UV"))
+            activeParameter = TEXTURES_FIELD;
 
         return getField();
     }

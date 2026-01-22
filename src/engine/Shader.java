@@ -16,6 +16,11 @@ import static org.lwjgl.opengl.GL32.GL_GEOMETRY_SHADER;
 import static org.lwjgl.opengl.GL43.*;
 
 public final class Shader {
+    private static final Pattern LAYOUT_PATTERN = Pattern.compile("^\\s*layout \\(location = (\\d+)\\) in (\\S+) (\\w+)(?:\\[(\\d+)])?;(?:.*//\\s*(\\$\\s*[a-zA-Z].*))?", Pattern.MULTILINE);
+    private static final Pattern VARIABLE_PATTERN = Pattern.compile("//\\$var\\s+(?:(int|float)?\\s+)?([a-zA-Z]\\w*)\\s+(?:=\\s+(-?\\d+.?\\d*|Settings.[a-zA-Z]\\w*))?");
+    private static final Pattern UNIFORM_PATTERN = Pattern.compile("^\\s*uniform (\\w+) (\\w+)\\s*;(?:.*//\\s*(\\$\\s*[a-zA-Z].*))?", Pattern.MULTILINE);
+    private static final Pattern INVERTED_PATTERN = Pattern.compile("^invert(?:ed)?_?([xyzw]*)$", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+
     private static final Map<String, Shader> shaders = new HashMap<>();
     private static Shader activeShader = null;
 
@@ -31,7 +36,7 @@ public final class Shader {
     }
 
     public static void cleanup() {
-        if (!Main.isCleanup()) return;
+        if (Main.isRunning()) return;
 
         for (Shader shader: shaders.values()) {
             glDeleteProgram(shader.shaderProgram);
@@ -49,16 +54,15 @@ public final class Shader {
     private final Map<String, Integer> fields = new HashMap<>();
     private final List<int[]> layouts = new ArrayList<>();
 
-    private final Pattern layoutPattern = Pattern.compile("^\\s*layout \\(location = (\\d+)\\) in (\\S+) (\\w+)(?:\\[(\\d+)])?;(?:.*//\\s*(\\$\\s*[a-zA-Z].*))?", Pattern.MULTILINE);
-    private final Pattern variablePattern = Pattern.compile("//\\$var\\s+(?:(int|float)?\\s+)?([a-zA-Z]\\w*)\\s+(?:=\\s+(-?\\d+.?\\d*|Settings.[a-zA-Z]\\w*))?");
-    private final Pattern uniformPattern = Pattern.compile("^\\s*uniform (\\w+) (\\w+)\\s*;(?:.*//\\s*(\\$\\s*[a-zA-Z].*))?", Pattern.MULTILINE);
-
     private final int VAO, stride;
     @Getter private int vertexSize;
 
     private Shader(String file) {
+        String filepath = "shaders/" + (fileName = file) + ".glsl";
+        if (!DataManager.resourceExists(filepath)) throw new RuntimeException("Failed to locate shader \"shaders/%s.glsl\".".formatted(file));
+
         String id = UUID.randomUUID().toString();
-        String code = DataManager.readResource("shaders/" + (fileName = file) + ".glsl");
+        String code = DataManager.readResource(filepath);
         code = applyVariables(code);
 
         String headerPattern = "//\\$(Vertex|Geometry|Fragment) Shader\\n";
@@ -96,6 +100,16 @@ public final class Shader {
         return offset;
     }
 
+    public Vector getInversionVector(int location) {
+        try { return new Vector(
+                layouts.get(location)[6],
+                layouts.get(location)[7],
+                layouts.get(location)[8],
+                layouts.get(location)[9]
+        ); }
+        catch (IndexOutOfBoundsException ignored) { return new Vector(); }
+    }
+
     public int getUniform(String uniform) {
         if (uniformLocations.containsKey(uniform)) return uniformLocations.get(uniform);
         int location = glGetUniformLocation(shaderProgram, uniform);
@@ -109,7 +123,7 @@ public final class Shader {
     }
 
     private void findUniforms(String file) {
-        Matcher matcher = uniformPattern.matcher(file);
+        Matcher matcher = UNIFORM_PATTERN.matcher(file);
 
         while (matcher.find()) {
             int uniformLocation = glGetUniformLocation(shaderProgram, matcher.group(2));
@@ -174,7 +188,7 @@ public final class Shader {
         List<Variable> variables = new ArrayList<>();
 
         // locate variables
-        Matcher matcher = variablePattern.matcher(code);
+        Matcher matcher = VARIABLE_PATTERN.matcher(code);
         while (matcher.find()) {
             boolean isFloat;
             try {isFloat = matcher.group(1).equals("float");}
@@ -209,7 +223,7 @@ public final class Shader {
 
     private void generateVAO(String code) {
         layouts.clear();
-        Matcher matcher = layoutPattern.matcher(code);
+        Matcher matcher = LAYOUT_PATTERN.matcher(code);
         vertexSize = 0;
         while (matcher.find()) {
             int location = Integer.parseInt(matcher.group(1));
@@ -229,17 +243,46 @@ public final class Shader {
                         .map(s -> s.trim().replaceAll("\\s+", "_"))
                         .filter(s -> !s.isBlank())
                         .map(s -> s.equalsIgnoreCase("normalized") ? "normalized" : s)
+                        .map(s -> {
+                            Matcher invertedMatcher = INVERTED_PATTERN.matcher(s);
+                            if (invertedMatcher.find()) {
+                                String args = invertedMatcher.group(1);
+                                List<String> directions;
+                                if (args.isBlank()) { directions = new ArrayList<>(){{add("invertY");}}; }
+                                else directions = Arrays.stream(args.split("\\B"))
+                                        .map(String::toUpperCase)
+                                        .distinct()
+                                        .map(str -> "invert" + str)
+                                        .toList();
+                                return directions.toArray(String[]::new);
+                            } else return new String[]{s};
+                        })
+                        .flatMap(Arrays::stream)
                         .toArray(String[]::new);
             } catch (NullPointerException ignored) {arguments = new String[0];}
 
             fields.put(name, location);
             for (String argument: arguments) {
-                if (argument.equals("normalized")) continue;
+                if (argument.equals("normalized")
+                        || argument.equals("invertX")
+                        || argument.equals("invertY")
+                        || argument.equals("invertZ")
+                        || argument.equals("invertW")
+                ) continue;
                 fields.put(argument, location);
             }
 
             Vector4i info = decodeType(type);
-            layouts.add(new int[]{location, info.x, info.y, info.z, array, Arrays.asList(arguments).contains("normalized") ? 1 : 0});
+            layouts.add(new int[]{
+                    location,
+                    info.x, info.y, info.z,
+                    array,
+                    Arrays.asList(arguments).contains("normalized") ? 1 : 0,
+                    Arrays.asList(arguments).contains("invertX") ? 1 : 0,
+                    Arrays.asList(arguments).contains("invertY") ? 1 : 0,
+                    Arrays.asList(arguments).contains("invertZ") ? 1 : 0,
+                    Arrays.asList(arguments).contains("invertW") ? 1 : 0
+            });
             vertexSize += info.x;
         }
         layouts.sort(Comparator.comparingInt(a -> a[0]));

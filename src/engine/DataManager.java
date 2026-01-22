@@ -1,11 +1,11 @@
 package engine;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.net.URISyntaxException;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,6 +33,10 @@ public final class DataManager {
 
     private DataManager() {}
 
+    public static boolean resourceExists(String resource) {
+        return ClassLoader.getSystemResource(resource) != null;
+    }
+
     public static String readResource(String resource) {
         try {
             StringBuilder result = new StringBuilder();
@@ -44,6 +48,21 @@ public final class DataManager {
         } catch (NullPointerException | IOException ignored) {
             return "";
         }
+    }
+
+    public static List<File> getAllDirectoryResourceFiles(String path) {
+        path += "/";
+        List<File> list = new ArrayList<>();
+        try {
+            ClassLoader.getSystemResourceAsStream(path);
+            File[] listOfFiles = new File(ClassLoader.getSystemResource(path).toURI()).listFiles();
+            assert listOfFiles != null;
+            for (File file : listOfFiles) {
+                if (file.isFile()) list.add(file);
+                else if (file.isDirectory()) list.addAll(getAllDirectoryResourceFiles(path + file.getName()));
+            }
+        } catch (URISyntaxException e) {throw new RuntimeException(e);}
+        return list;
     }
 
     public static float getSetting(String var) {

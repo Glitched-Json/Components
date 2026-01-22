@@ -3,6 +3,7 @@ package engine;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.IntStream;
 
 @SuppressWarnings("unused")
 public final class Vector {
@@ -19,6 +20,20 @@ public final class Vector {
     }
     private Vector(int size) {
         this.values = new Number[this.size = size];
+    }
+
+    public Vector setAll(byte[] values) {return setAll(IntStream.range(0, values.length).mapToObj(i -> values[i]).toArray(Byte[]::new));}
+    public Vector setAll(short[] values) {return setAll(IntStream.range(0, values.length).mapToObj(i -> values[i]).toArray(Short[]::new));}
+    public Vector setAll(int[] values) {return setAll(Arrays.stream(values).boxed().toArray(Integer[]::new));}
+    public Vector setAll(long[] values) {return setAll(Arrays.stream(values).boxed().toArray(Long[]::new));}
+    public Vector setAll(double[] values) {return setAll(Arrays.stream(values).boxed().toArray(Double[]::new));}
+    public Vector setAll(float[] values) {return setAll(IntStream.range(0, values.length).mapToDouble(i -> values[i]).boxed().toArray(Double[]::new));}
+    public Vector setAll(Number[] values) {
+        IntStream.range(0, size).forEach(i -> {
+            if (i < values.length) this.values[i] = values[i];
+            else this.values[i] = 0;
+        });
+        return this;
     }
 
     public static Vector concatenate(Vector... vectors) { return concatenate(Arrays.asList(vectors)); }
@@ -61,32 +76,44 @@ public final class Vector {
 
     public byte[] getByteArray() {
         byte[] result = new byte[size];
-        for (int i=0; i<size; i++) result[i] = values[i].byteValue();
+        for (int i=0; i<size; i++)
+            try { result[i] = values[i].byteValue(); }
+        catch (NullPointerException ignored) { result[i] = 0; }
         return result;
     }
     public short[] getShortArray() {
         short[] result = new short[size];
-        for (int i=0; i<size; i++) result[i] = values[i].shortValue();
+        for (int i=0; i<size; i++)
+            try { result[i] = values[i].shortValue(); }
+        catch (NullPointerException ignored) { result[i] = 0; }
         return result;
     }
     public int[] getIntArray() {
         int[] result = new int[size];
-        for (int i=0; i<size; i++) result[i] = values[i].intValue();
+        for (int i=0; i<size; i++)
+            try { result[i] = values[i].intValue(); }
+        catch (NullPointerException ignored) { result[i] = 0; }
         return result;
     }
     public long[] getLongArray() {
         long[] result = new long[size];
-        for (int i=0; i<size; i++) result[i] = values[i].longValue();
+        for (int i=0; i<size; i++)
+            try { result[i] = values[i].longValue(); }
+        catch (NullPointerException ignored) { result[i] = 0; }
         return result;
     }
     public float[] getFloatArray() {
         float[] result = new float[size];
-        for (int i=0; i<size; i++) result[i] = values[i].floatValue();
+        for (int i=0; i<size; i++)
+            try { result[i] = values[i].floatValue(); }
+        catch (NullPointerException ignored) { result[i] = 0; }
         return result;
     }
     public double[] getDoubleArray() {
         double[] result = new double[size];
-        for (int i=0; i<size; i++) result[i] = values[i].doubleValue();
+        for (int i=0; i<size; i++)
+            try { result[i] = values[i].doubleValue(); }
+        catch (NullPointerException ignored) { result[i] = 0; }
         return result;
     }
 

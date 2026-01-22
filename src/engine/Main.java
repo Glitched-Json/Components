@@ -11,7 +11,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 
 public class Main {
-    @Getter private static boolean cleanup = false;
+    @Getter private static boolean running = true;
 
     private Main() {}
 
@@ -76,16 +76,18 @@ public class Main {
 
         Window.initialize();
         Shader.get("shader").bind();
+        TextureAtlas.initialize();
 
         Game.initialize();
     }
 
     private static void cleanup() {
-        cleanup = true;
+        running = false;
 
         Window.cleanup();
         Shader.cleanup();
         Model.cleanup();
+        TextureAtlas.cleanup();
 
         glfwTerminate();
         Objects.requireNonNull(glfwSetErrorCallback(null)).free();

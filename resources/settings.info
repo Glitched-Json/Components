@@ -4,3 +4,7 @@ vSync: true
 
 depthTest: true
 antiAliasingSamples: 4
+
+showInitializationMessages: false
+showTextureAtlasImageLoading: false
+textureAtlasBufferSize: 1
