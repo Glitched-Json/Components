@@ -11,7 +11,7 @@ public class Square extends Entity {
     }
 
     @Override
-    public void update(double dt) {
+    public void staticUpdate(double dt) {
         rotation.y += 90 * (float) dt;
         if (rotation.y >= 270) {
             rotation.y -= 180;

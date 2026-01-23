@@ -43,6 +43,13 @@ public final class Scene {
         createObjects();
     }
 
+    public void staticUpdate(double dt) {
+        objects.forEach(e -> e.staticUpdate(dt));
+
+        removeObjects();
+        createObjects();
+    }
+
     public void render() {
         Shader.get().applyUniforms(camera);
         objects.forEach(Entity::render);

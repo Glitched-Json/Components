@@ -22,11 +22,11 @@ import static org.lwjgl.opengl.GL30.glGenerateMipmap;
 
 @SuppressWarnings("unused")
 public class TextureAtlas {
+    private static final List<String> loadedTextures = new ArrayList<>();
+    private static final Map<String, Vector4f> imageMapping = new HashMap<>();
     private static boolean initialized = false;
     private static int id;
-    private static final List<String> loadedTextures = new ArrayList<>();
     private static BufferedImage atlasImage;
-    private static final Map<String, Vector4f> imageMapping = new HashMap<>();
     @Getter private static float textureWidth = 0, textureHeight = 0;
 
     public static void initialize() {
@@ -41,7 +41,7 @@ public class TextureAtlas {
             generateTexture(points.getFirst(), buffer);
             bind();
 
-            if (DataManager.getFlag("showInitializationMessages"))
+            if (DataManager.getFlag("show_initialization_messages"))
                 System.out.println("Successfully Initialized Texture Atlas.");
         } catch (IOException e) {
             throw new RuntimeException("Unable to initialize Texture Atlas.\n" + e.getMessage());
@@ -60,7 +60,7 @@ public class TextureAtlas {
             images.add(image);
             loadedTextures.add(file.getName());
 
-            if (DataManager.getFlag("showTextureAtlasImageLoading"))
+            if (DataManager.getFlag("show_texture_atlas_image_loading"))
                 System.out.printf("Texture \"%s\" added to Texture Atlas.%n", file.getName());
         }
         return images;
@@ -68,7 +68,7 @@ public class TextureAtlas {
 
     private static List<Vector4i> texturePacking(List<BufferedImage> images) {
         List<Vector4i> positions = new ArrayList<>();
-        int buffer = (int) DataManager.getSetting("textureAtlasBufferSize");
+        int buffer = Math.max(0, (int) DataManager.getSetting("texture_atlas_buffer_size"));
 
         int w = images.stream().mapToInt(BufferedImage::getWidth).sum() + (images.size()) * buffer * 2;
         int h = images.stream().mapToInt(BufferedImage::getHeight).max().orElse(1) + buffer * 2;

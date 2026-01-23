@@ -30,7 +30,7 @@ public final class Window {
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-        if (DataManager.getFlag("antiAliasingSamples")) glfwWindowHint(GLFW_SAMPLES, (int) DataManager.getSetting("antiAliasingSamples"));
+        if (DataManager.getFlag("anti_aliasing_samples")) glfwWindowHint(GLFW_SAMPLES, (int) DataManager.getSetting("anti_aliasing_samples"));
         //noinspection AssignmentUsedAsCondition
         glfwWindowHint(GLFW_DOUBLEBUFFER, (vSync = DataManager.getFlag("vSync")) ? GLFW_TRUE : GLFW_FALSE);
 
@@ -62,7 +62,7 @@ public final class Window {
                 InputManager.registerCursorPosition(new Vector2d(xPosition, yPosition)));
 
         glfwMakeContextCurrent(id);
-        if (vSync) glfwSwapInterval(DataManager.getFlag("uncappedFPS") ? 0 : 1);
+        if (vSync) glfwSwapInterval(DataManager.getFlag("uncapped_FPS") ? 0 : 1);
         glfwShowWindow(id);
 
         createCapabilities();

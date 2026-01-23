@@ -13,17 +13,38 @@ public final class DataManager {
     private static final Map<String, Float> settings = new HashMap<>();
     static {
         try {
-            Pattern pattern = Pattern.compile("^\\s*([a-zA-Z][\\w ]*)\\s*[:=]\\s*((\\d+(?:\\.\\d*)?)|(true|false))", Pattern.CASE_INSENSITIVE);
+            // Pattern pattern = Pattern.compile("^\\s*([a-z][\\w ]*?)\\s*[:=]\\s*((\\d+(?:\\.\\d*)?)|(true|false))", Pattern.CASE_INSENSITIVE);
+            Pattern pattern = Pattern.compile("^\\s*([a-z][\\w ]*?)\\s*[:=]\\s*(.*)", Pattern.CASE_INSENSITIVE);
+            Pattern comments = Pattern.compile("^(.*?)(?:(//|/\\*).*)?$", Pattern.MULTILINE);
+            Pattern multilineBreak = Pattern.compile(".*\\*/(.*)", Pattern.MULTILINE);
             String line;
             BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(ClassLoader.getSystemResourceAsStream("settings.info"))));
+            Matcher commentMatcher;
+            boolean multilineComment = false;
             float value;
             while ((line = reader.readLine()) != null) {
+                if (line.isBlank()) continue;
+
+                if (multilineComment) {
+                    Matcher multiMatcher = multilineBreak.matcher(line);
+                    if (multiMatcher.find()) {
+                        line = multiMatcher.group(1);
+                        multilineComment = false;
+                    } else continue;
+                }
+
+                commentMatcher = comments.matcher(line);
+                if (commentMatcher.find()) {
+                    line = commentMatcher.group(1);
+                    if (commentMatcher.group(2) != null && commentMatcher.group(2).equals("/*")) multilineComment = true;
+                }
+
                 Matcher matcher = pattern.matcher(line);
                 if (matcher.find()) {
-                    try {value = switch (matcher.group(2)) {
+                    try {value = switch (matcher.group(2).trim().toLowerCase()) {
                         case "true" -> 1;
                         case "false" -> 0;
-                        default -> Float.parseFloat(matcher.group(2));
+                        default -> Float.parseFloat(matcher.group(2).trim());
                     };} catch (NullPointerException | NumberFormatException ignored) {value = 0;}
                     settings.put(matcher.group(1), value);
                 }

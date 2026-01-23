@@ -23,6 +23,8 @@ public abstract class Entity {
 
     public void update(double dt) {}
 
+    public void staticUpdate(double dt) {}
+
     public void render() {
         model.shader.bind();
         model.bindVBO();
