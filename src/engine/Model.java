@@ -77,6 +77,7 @@ public final class Model {
     private boolean cullFront = false, cullBack = true, active = true;
     private int[] indicesBuffer;
     private float[] verticesBuffer;
+    @Getter private final BoundingBox boundingBox = new BoundingBox();
 
     private Model(String model, Shader shader) {
         if ((fileName = parseModel(name = model)) == null) throw new RuntimeException("File \"models/%s\" not found or supported.".formatted(model));
@@ -182,6 +183,17 @@ public final class Model {
                 buffer.add(v);
             }
         }
+
+        boundingBox.setMin(
+                buffer.stream().mapToDouble(Vector::getFirstDouble).min().orElse(0),
+                buffer.stream().mapToDouble(v -> v.getDouble(1)).min().orElse(0),
+                buffer.stream().mapToDouble(v -> v.getDouble(2)).min().orElse(0)
+        );
+        boundingBox.setMax(
+                buffer.stream().mapToDouble(Vector::getFirstDouble).max().orElse(0),
+                buffer.stream().mapToDouble(v -> v.getDouble(1)).max().orElse(0),
+                buffer.stream().mapToDouble(v -> v.getDouble(2)).max().orElse(0)
+        );
 
         double[] flattened = buffer.stream().map(Vector::getDoubleArray).flatMapToDouble(Arrays::stream).toArray();
         verticesBuffer = new float[flattened.length];

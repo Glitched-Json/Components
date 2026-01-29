@@ -7,4 +7,9 @@ public class Box extends Entity {
         super("box", "texture_shader");
         position.set(x.floatValue(), y.floatValue(), z.floatValue());
     }
+
+    @Override
+    public void update(double dt) {
+        rotation.y += 90 * (float) dt;
+    }
 }

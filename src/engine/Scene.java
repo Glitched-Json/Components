@@ -38,14 +38,18 @@ public final class Scene {
 
     public void update(double dt) {
         camera.update(dt);
-        objects.forEach(e -> e.update(dt));
+        objects.parallelStream().forEach(e -> e.update(dt));
 
         removeObjects();
         createObjects();
     }
 
     public void staticUpdate(double dt) {
-        objects.forEach(e -> e.staticUpdate(dt));
+        camera.staticUpdate();
+        objects.parallelStream().forEach(e -> {
+            e.checkVisibility();
+            e.staticUpdate(dt);
+        });
 
         removeObjects();
         createObjects();
@@ -53,7 +57,7 @@ public final class Scene {
 
     public void render() {
         Shader.get().applyUniforms(camera);
-        objects.forEach(Entity::render);
+        objects.stream().filter(Entity::isVisible).forEach(Entity::render);
     }
 
     public void create(Entity entity) {

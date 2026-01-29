@@ -1,17 +1,20 @@
 package engine;
 
 import com.glitched.annotations.Uniform;
+import lombok.Getter;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 @SuppressWarnings("unused")
 public abstract class Entity {
-    protected final Vector3f
+    @Getter protected final Vector3f
             position = new Vector3f(0),
             rotation = new Vector3f(0),
             scale = new Vector3f(1);
     private final String modelName;
     protected Model model;
+    @Getter private boolean visible = true;
+    private final BoundingBox boundingBox = new BoundingBox(this);
 
     public Entity(String model) {this(Model.get(model));}
     public Entity(String model, Shader shader) {this(Model.get(model, shader));}
@@ -19,6 +22,11 @@ public abstract class Entity {
     public Entity(Model model) {
         this.model = model;
         modelName = model.getName();
+        boundingBox.setBounds(model.getBoundingBox());
+    }
+
+    public final void checkVisibility() {
+        visible = Scene.get().getCamera().isInView(boundingBox.getMin(), boundingBox.getMax());
     }
 
     public void update(double dt) {}
