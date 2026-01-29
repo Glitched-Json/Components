@@ -6,12 +6,12 @@ import org.joml.Vector3f;
 
 @SuppressWarnings("unused")
 public abstract class Entity {
-    protected Model model;
-    private final String modelName;
     protected final Vector3f
             position = new Vector3f(0),
             rotation = new Vector3f(0),
             scale = new Vector3f(1);
+    private final String modelName;
+    protected Model model;
 
     public Entity(String model) {this(Model.get(model));}
     public Entity(String model, Shader shader) {this(Model.get(model, shader));}
@@ -25,10 +25,11 @@ public abstract class Entity {
 
     public void staticUpdate(double dt) {}
 
-    public void render() {
-        model.shader.bind();
+    public void render() {render(model.shader);}
+    public void render(Shader shader) {
+        shader.bind();
         model.bindVBO();
-        model.shader.applyUniforms(this);
+        Shader.get().applyUniforms(this);
         model.render();
     }
 

@@ -2,12 +2,12 @@ package game;
 
 import engine.Entity;
 
+@SuppressWarnings("unused")
 public class Square extends Entity {
     private boolean flip = false;
     public Square(Number x, Number y, Number z) {
         super("quad", "texture_shader");
         position.set(x.floatValue(), y.floatValue(), z.floatValue());
-        rotation.y = 180;
     }
 
     @Override

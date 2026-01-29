@@ -12,23 +12,24 @@ import java.util.Map;
 public final class Scene {
     private static final Map<String, Scene> scenes = new HashMap<>();
     private static Scene activeScene = get("main");
+    private final List<Entity>
+            objects = new ArrayList<>(),
+            toCreate = new ArrayList<>(),
+            toDestroy = new ArrayList<>(),
+            temp = new ArrayList<>();
+    @Getter private final Camera camera = new Camera();
+
+    // -----------------------------------------------------------------------------------------------------------------
+    private Scene() {}
+
     @NotNull public static Scene get() { return activeScene; }
+
     public static Scene get(String scene) {
         if (scenes.containsKey(scene)) return scenes.get(scene);
         Scene s = new Scene();
         scenes.put(scene, s);
         return s;
     }
-
-    // -----------------------------------------------------------------------------------------------------------------
-
-    private final List<Entity>
-            objects = new ArrayList<>(),
-            toCreate = new ArrayList<>(),
-            toDestroy = new ArrayList<>(),
-            temp = new ArrayList<>();
-    private Scene() {}
-    @Getter private final Camera camera = new Camera();
 
     public void setActive() {
         activeScene = this;

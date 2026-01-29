@@ -63,19 +63,27 @@ public final class Window {
 
         glfwMakeContextCurrent(id);
         if (vSync) glfwSwapInterval(DataManager.getFlag("uncapped_FPS") ? 0 : 1);
+        lockCursor(DataManager.getFlag("first_person_mode"));
         glfwShowWindow(id);
 
         createCapabilities();
     }
 
+    public static void lockCursor(boolean lock) {glfwSetInputMode(id, GLFW_CURSOR, lock ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);}
+
     public static void setViewport() {glViewport(0, 0, width, height);}
     public static void setTitle(String title) { glfwSetWindowTitle(id, Window.title = title); }
-    public static void setClipboard(String clipboard) { glfwSetClipboardString(id, clipboard); }
-    public static void setOpacity(Number opacity) { glfwSetWindowOpacity(id, opacity.floatValue()); }
 
     public static float getAspectRatio() { return width / (float) height; }
+
     public static String getClipboard() { return glfwGetClipboardString(id); }
+
+    public static void setClipboard(String clipboard) { glfwSetClipboardString(id, clipboard); }
+
     public static float getOpacity() { return glfwGetWindowOpacity(id); }
+
+    public static void setOpacity(Number opacity) { glfwSetWindowOpacity(id, opacity.floatValue()); }
+
     @Contract(" -> new")
     public static @NotNull Vector2f getContentScale() {float[][] s = new float[2][1]; glfwGetWindowContentScale(id, s[0], s[1]); return new Vector2f(s[0][0], s[1][0]);}
     @Contract(" -> new")

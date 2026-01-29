@@ -30,8 +30,8 @@ public class Main {
         Scene.get().update(t);
         Scene.get().render();
 
-        glfwPollEvents();
         InputManager.update();
+        glfwPollEvents();
     }
 
     private static void update(double t) {

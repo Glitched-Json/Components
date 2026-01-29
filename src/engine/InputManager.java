@@ -1,6 +1,7 @@
 package engine;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.joml.Vector2d;
 import org.joml.Vector3i;
 import org.joml.Vector4i;
@@ -16,7 +17,8 @@ public final class InputManager {
     private static final Map<Integer, Integer>
             keyInputs = new HashMap<>(),
             mouseInputs = new HashMap<>();
-    @Getter private static double xPosition = 0, yPosition = 0;
+    @Getter private static double xPosition = 0, yPosition = 0, xOffset = 0, yOffset = 0;
+    @Setter private static boolean cursorOffsetInitialized = false;
 
     private InputManager() {}
 
@@ -44,9 +46,18 @@ public final class InputManager {
     }
 
     public static void registerCursorPosition(Vector2d pos) {
+        if (cursorOffsetInitialized) {
+            float sensitivity = DataManager.getSetting("mouse_sensitivity");
+            xOffset += (pos.x - xPosition) * sensitivity;
+            yOffset += (pos.y - yPosition) * sensitivity;
+        }
+        cursorOffsetInitialized = true;
+
         xPosition = pos.x;
         yPosition = pos.y;
     }
+
+    public static void resetOffsets() { xOffset = yOffset = 0; }
 
     public static boolean isPressed(int key) {return keyInputs.getOrDefault(key, -1).equals(0);}
     public static boolean isDown(int key) {return keyInputs.getOrDefault(key, -1).equals(1) || isPressed(key);}
