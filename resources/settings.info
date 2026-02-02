@@ -1,6 +1,6 @@
 tps: 60
 fps: 120
-uncapped_FPS: true
+uncapped_FPS: false
 vSync       : false
 
 spatial_detail   : 0.1 // [0.1, 1] - Texture size in comparison to Window size

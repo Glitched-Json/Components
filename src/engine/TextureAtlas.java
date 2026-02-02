@@ -49,7 +49,7 @@ public class TextureAtlas {
     }
 
     public static Vector4f getBounds(String texture) {
-        if (!imageMapping.containsKey(texture)) return new Vector4f(0, 0, 1, 1);
+        if (texture == null || !imageMapping.containsKey(texture)) return new Vector4f(0, 0, 1, 1);
         return imageMapping.get(texture);
     }
 

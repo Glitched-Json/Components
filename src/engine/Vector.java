@@ -56,15 +56,15 @@ public final class Vector {
     public Vector mul(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() * value.doubleValue(); return this; }
     public Vector div(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() / value.doubleValue(); return this; }
 
-    public Vector2d toVector2d() { return new Vector2d(Arrays.copyOf(getDoubleArray(), 2)); }
-    public Vector3d toVector3d() { return new Vector3d(Arrays.copyOf(getDoubleArray(), 3)); }
-    public Vector4d toVector4d() { return new Vector4d(Arrays.copyOf(getDoubleArray(), 4)); }
-    public Vector2f toVector2f() { return new Vector2f( Arrays.copyOf(getFloatArray(), 2)); }
-    public Vector3f toVector3f() { return new Vector3f( Arrays.copyOf(getFloatArray(), 3)); }
-    public Vector4f toVector4f() { return new Vector4f( Arrays.copyOf(getFloatArray(), 4)); }
-    public Vector2i toVector2i() { return new Vector2i(   Arrays.copyOf(getIntArray(), 2)); }
-    public Vector3i toVector3i() { return new Vector3i(   Arrays.copyOf(getIntArray(), 3)); }
-    public Vector4i toVector4i() { return new Vector4i(   Arrays.copyOf(getIntArray(), 4)); }
+    public Vector2d toVector2d() { return new Vector2d(Arrays.copyOf(toDoubleArray(), 2)); }
+    public Vector3d toVector3d() { return new Vector3d(Arrays.copyOf(toDoubleArray(), 3)); }
+    public Vector4d toVector4d() { return new Vector4d(Arrays.copyOf(toDoubleArray(), 4)); }
+    public Vector2f toVector2f() { return new Vector2f( Arrays.copyOf(toFloatArray(), 2)); }
+    public Vector3f toVector3f() { return new Vector3f( Arrays.copyOf(toFloatArray(), 3)); }
+    public Vector4f toVector4f() { return new Vector4f( Arrays.copyOf(toFloatArray(), 4)); }
+    public Vector2i toVector2i() { return new Vector2i(   Arrays.copyOf(toIntArray(), 2)); }
+    public Vector3i toVector3i() { return new Vector3i(   Arrays.copyOf(toIntArray(), 3)); }
+    public Vector4i toVector4i() { return new Vector4i(   Arrays.copyOf(toIntArray(), 4)); }
 
     public static Vector concatenate(Vector... vectors) { return concatenate(Arrays.asList(vectors)); }
     public static Vector concatenate(List<Vector> vectors) {
@@ -104,42 +104,42 @@ public final class Vector {
 
     // --- Getter Methods ----------------------------------------------------------------------------------------------
 
-    public byte[] getByteArray() {
+    public byte[] toByteArray() {
         byte[] result = new byte[size];
         for (int i=0; i<size; i++)
             try { result[i] = values[i].byteValue(); }
         catch (NullPointerException ignored) { result[i] = 0; }
         return result;
     }
-    public short[] getShortArray() {
+    public short[] toShortArray() {
         short[] result = new short[size];
         for (int i=0; i<size; i++)
             try { result[i] = values[i].shortValue(); }
         catch (NullPointerException ignored) { result[i] = 0; }
         return result;
     }
-    public int[] getIntArray() {
+    public int[] toIntArray() {
         int[] result = new int[size];
         for (int i=0; i<size; i++)
             try { result[i] = values[i].intValue(); }
         catch (NullPointerException ignored) { result[i] = 0; }
         return result;
     }
-    public long[] getLongArray() {
+    public long[] toLongArray() {
         long[] result = new long[size];
         for (int i=0; i<size; i++)
             try { result[i] = values[i].longValue(); }
         catch (NullPointerException ignored) { result[i] = 0; }
         return result;
     }
-    public float[] getFloatArray() {
+    public float[] toFloatArray() {
         float[] result = new float[size];
         for (int i=0; i<size; i++)
             try { result[i] = values[i].floatValue(); }
         catch (NullPointerException ignored) { result[i] = 0; }
         return result;
     }
-    public double[] getDoubleArray() {
+    public double[] toDoubleArray() {
         double[] result = new double[size];
         for (int i=0; i<size; i++)
             try { result[i] = values[i].doubleValue(); }

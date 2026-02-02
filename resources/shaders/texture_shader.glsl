@@ -10,9 +10,14 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform mat4 transform;
 
+uniform vec4 atlasRemap; //$ AtlasRemapping
+
 void main() {
     gl_Position = projection * view * transform * vec4(vPos, 1.);
-    fTex = vTex;
+    fTex = vec2(
+        atlasRemap.x + vTex.x * (atlasRemap.z - atlasRemap.x),
+        atlasRemap.y + vTex.y * (atlasRemap.w - atlasRemap.y)
+    );
 }
 
 //$Fragment Shader

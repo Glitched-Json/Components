@@ -31,6 +31,7 @@ public class Main {
         Window.setViewport();
         SpatialManager.searchID();
         SpatialManager.unbind();
+        TextureAtlas.bind();
     }
 
     private static void render(int clearMask, double t) {
@@ -132,8 +133,8 @@ public class Main {
 
         Window.initialize();
         Shader.get("shader").bind();
-        TextureAtlas.initialize();
         SpatialManager.initialize();
+        TextureAtlas.initialize();
 
         game.initialize();
     }
@@ -144,8 +145,8 @@ public class Main {
         Window.cleanup();
         Shader.cleanup();
         Model.cleanup();
-        TextureAtlas.cleanup();
         SpatialManager.cleanup();
+        TextureAtlas.cleanup();
 
         glfwTerminate();
         Objects.requireNonNull(glfwSetErrorCallback(null)).free();

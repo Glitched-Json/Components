@@ -195,7 +195,7 @@ public final class Model {
                 buffer.stream().mapToDouble(v -> v.getDouble(2)).max().orElse(0)
         );
 
-        double[] flattened = buffer.stream().map(Vector::getDoubleArray).flatMapToDouble(Arrays::stream).toArray();
+        double[] flattened = buffer.stream().map(Vector::toDoubleArray).flatMapToDouble(Arrays::stream).toArray();
         verticesBuffer = new float[flattened.length];
         IntStream.range(0, flattened.length).forEach(i -> verticesBuffer[i] = (float) flattened[i]);
 
