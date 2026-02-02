@@ -7,14 +7,15 @@ import org.joml.Vector3f;
 
 @SuppressWarnings("unused")
 public abstract class Entity {
-    @Getter protected final Vector3f
+    protected final Vector3f
             position = new Vector3f(0),
             rotation = new Vector3f(0),
             scale = new Vector3f(1);
     private final String modelName;
     protected Model model;
     @Getter private boolean visible = true;
-    private final BoundingBox boundingBox = new BoundingBox(this);
+    protected final BoundingBox boundingBox = new BoundingBox(this);
+    @Getter private int id = 0;
 
     public Entity(String model) {this(Model.get(model));}
     public Entity(String model, Shader shader) {this(Model.get(model, shader));}
@@ -32,6 +33,13 @@ public abstract class Entity {
     public void update(double dt) {}
 
     public void staticUpdate(double dt) {}
+
+    public final void spatialRender() {
+        Shader shader = model.shader;
+        setShader("spatial_shader");
+        render();
+        setShader(shader);
+    }
 
     public void render() {render(model.shader);}
     public void render(Shader shader) {
@@ -62,4 +70,15 @@ public abstract class Entity {
 
     public void onDestroy() {}
     public void onCreate() {}
+
+    public Vector3f getPosition() { return new Vector3f(position); }
+    public Vector3f getScale() { return new Vector3f(scale); }
+    public Vector3f getRotation() { return new Vector3f(rotation); }
+
+    public void setID(int id) {if (this.id == 0) this.id = id; }
+
+    @Uniform
+    private float[] colorID() {
+        return new Vector((id >> 16) & 0xFF, (id >> 8) & 0xFF, id & 0xFF).div(255).getFloatArray();
+    }
 }

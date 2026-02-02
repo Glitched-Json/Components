@@ -56,6 +56,7 @@ public final class Window {
             Window.width = width;
             Window.height = height;
             setViewport();
+            SpatialManager.resize();
         });
 
         glfwSetCursorPosCallback(id, (_, xPosition, yPosition) ->
@@ -71,7 +72,7 @@ public final class Window {
 
     public static void lockCursor(boolean lock) {glfwSetInputMode(id, GLFW_CURSOR, lock ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);}
 
-    public static void setViewport() {glViewport(0, 0, width, height);}
+    public static void setViewport() { glViewport(0, 0, width, height); }
     public static void setTitle(String title) { glfwSetWindowTitle(id, Window.title = title); }
 
     public static float getAspectRatio() { return width / (float) height; }

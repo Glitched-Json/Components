@@ -91,6 +91,10 @@ public final class DataManager {
         return 0;
     }
 
+    public static float getSettingClamped(String var, Number min, Number max) {
+        return Logic.clamp(getSetting(var), min, max);
+    }
+
     public static boolean getFlag(String var) {
         if (settings.containsKey(var)) return settings.get(var) != 0;
         return false;

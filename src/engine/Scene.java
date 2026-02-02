@@ -20,6 +20,7 @@ public final class Scene {
     @Getter private final Camera camera = new Camera();
 
     // -----------------------------------------------------------------------------------------------------------------
+    private int lastID = 1;
     private Scene() {}
 
     @NotNull public static Scene get() { return activeScene; }
@@ -53,6 +54,12 @@ public final class Scene {
 
         removeObjects();
         createObjects();
+    }
+
+    public void renderSpatial() {
+        Shader.get("spatial_shader").bind();
+        Shader.get().applyUniforms(camera);
+        objects.stream().filter(Entity::isVisible).forEach(Entity::spatialRender);
     }
 
     public void render() {
@@ -89,7 +96,10 @@ public final class Scene {
             temp.addAll(toCreate);
             toCreate.clear();
 
-            temp.forEach(Entity::onCreate);
+            temp.forEach(e -> {
+                e.setID(lastID++);
+                e.onCreate();
+            });
         }
     }
 }

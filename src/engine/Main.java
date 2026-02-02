@@ -22,6 +22,17 @@ public class Main {
         cleanup();
     }
 
+    private static void spatialRender() {
+        SpatialManager.bind();
+        glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        SpatialManager.setViewport();
+        Scene.get().renderSpatial();
+        Window.setViewport();
+        SpatialManager.searchID();
+        SpatialManager.unbind();
+    }
+
     private static void render(int clearMask, double t) {
         Window.frameUpdate();
         glClear(clearMask);
@@ -41,17 +52,20 @@ public class Main {
 
     private static void run() {
         DecimalFormat format = new DecimalFormat(",###");
-        double targetFPS = 1d / Math.max(1e-9, DataManager.getSetting("fps"));
-        double targetTPS = 1d / DataManager.getSetting("tps");
+        double targetFPS = 1d / Math.max(1e-9, DataManager.getSetting("fps")); // frames per second
+        double targetTPS = 1d / DataManager.getSetting("tps");                 // ticks  per second
+        double targetSRR = 1d / DataManager.getSetting("spatial_fps");         // spatial refresh rate
         boolean uncappedFPS = DataManager.getFlag("uncapped_FPS");
+        boolean spacialMatchFPS = DataManager.getFlag("spatial_match_fps");
 
         int clearMask = GL_COLOR_BUFFER_BIT;
         if (DataManager.getFlag("depth_test")) clearMask |= GL_DEPTH_BUFFER_BIT;
         else glDisable(GL_DEPTH_TEST);
 
-        double timeRender = 0, timeStatic = 0, tFPS = 0, elapsedTime;
+        double tFPS = 0, elapsedTime;
         long start, end = System.nanoTime(), passedTime;
-        int fpsCounter = 0, tpsCounter = 0;
+        double timeRender = 0, timeStatic = 0, timeSpatial = 0;
+        int fpsCounter = 0, tpsCounter = 0, srrCounter = 0;
 
         boolean showMetrics = DataManager.getFlag("show_metrics_on_window_title");
 
@@ -63,14 +77,30 @@ public class Main {
             elapsedTime = passedTime / (double) 1_000_000_000L;
             timeRender += elapsedTime;
             timeStatic += elapsedTime;
+            timeSpatial += elapsedTime;
             tFPS += elapsedTime;
+
+            // Spatial Rendering
+            if (!spacialMatchFPS && timeSpatial >= targetSRR) {
+                spatialRender();
+                timeSpatial %= targetSRR;
+                srrCounter++;
+            }
 
             // Rendering
             if (Window.isVSync() || uncappedFPS) {
+                if (spacialMatchFPS) {
+                    spatialRender();
+                    srrCounter++;
+                }
                 render(clearMask, timeRender);
                 timeRender = 0;
                 fpsCounter++;
             } else if (timeRender >= targetFPS) {
+                if (spacialMatchFPS) {
+                    spatialRender();
+                    srrCounter++;
+                }
                 render(clearMask, timeRender);
                 timeRender %= targetFPS;
                 fpsCounter++;
@@ -86,12 +116,12 @@ public class Main {
             // FPS
             if (showMetrics && tFPS >= 1.) {
                 tFPS %= 1.;
-                Window.setTitle("FPS: %s | TPS: %s".formatted(
+                Window.setTitle("FPS: %s | TPS: %s | SRR: %s".formatted(
                         format.format(fpsCounter).replaceAll(",", "."),
-                        format.format(tpsCounter).replaceAll(",", ".")
+                        format.format(tpsCounter).replaceAll(",", "."),
+                        format.format(srrCounter).replaceAll(",", ".")
                 ));
-                // Window.setTitle("FPS: " + format.format(fpsCounter).replaceAll(",", "."));
-                fpsCounter = tpsCounter = 0;
+                fpsCounter = tpsCounter = srrCounter = 0;
             }
         }
     }
@@ -103,6 +133,7 @@ public class Main {
         Window.initialize();
         Shader.get("shader").bind();
         TextureAtlas.initialize();
+        SpatialManager.initialize();
 
         game.initialize();
     }
@@ -114,6 +145,7 @@ public class Main {
         Shader.cleanup();
         Model.cleanup();
         TextureAtlas.cleanup();
+        SpatialManager.cleanup();
 
         glfwTerminate();
         Objects.requireNonNull(glfwSetErrorCallback(null)).free();

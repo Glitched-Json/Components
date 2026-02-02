@@ -1,5 +1,8 @@
 package engine;
 
+import org.joml.*;
+
+import java.lang.Math;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -11,6 +14,15 @@ public final class Vector {
     private final Number[] values;
     private int type = 4;
 
+    public Vector(Vector2d vector) { this(vector.x, vector.y); }
+    public Vector(Vector2f vector) { this(vector.x, vector.y); }
+    public Vector(Vector2i vector) { this(vector.x, vector.y); }
+    public Vector(Vector3d vector) { this(vector.x, vector.y, vector.z); }
+    public Vector(Vector3f vector) { this(vector.x, vector.y, vector.z); }
+    public Vector(Vector3i vector) { this(vector.x, vector.y, vector.z); }
+    public Vector(Vector4d vector) { this(vector.x, vector.y, vector.z, vector.w); }
+    public Vector(Vector4f vector) { this(vector.x, vector.y, vector.z, vector.w); }
+    public Vector(Vector4i vector) { this(vector.x, vector.y, vector.z, vector.w); }
     public Vector(Number... values) {
         this.values = Arrays.copyOf(values, size = values.length);
     }
@@ -35,6 +47,24 @@ public final class Vector {
         });
         return this;
     }
+
+    public Vector toRadians() { for (int i=0; i<values.length; i++) values[i] = Math.toRadians(values[i].doubleValue()); return this; }
+    public Vector toDegrees() { for (int i=0; i<values.length; i++) values[i] = Math.toDegrees(values[i].doubleValue()); return this; }
+
+    public Vector add(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() + value.doubleValue(); return this; }
+    public Vector sub(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() - value.doubleValue(); return this; }
+    public Vector mul(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() * value.doubleValue(); return this; }
+    public Vector div(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() / value.doubleValue(); return this; }
+
+    public Vector2d toVector2d() { return new Vector2d(Arrays.copyOf(getDoubleArray(), 2)); }
+    public Vector3d toVector3d() { return new Vector3d(Arrays.copyOf(getDoubleArray(), 3)); }
+    public Vector4d toVector4d() { return new Vector4d(Arrays.copyOf(getDoubleArray(), 4)); }
+    public Vector2f toVector2f() { return new Vector2f( Arrays.copyOf(getFloatArray(), 2)); }
+    public Vector3f toVector3f() { return new Vector3f( Arrays.copyOf(getFloatArray(), 3)); }
+    public Vector4f toVector4f() { return new Vector4f( Arrays.copyOf(getFloatArray(), 4)); }
+    public Vector2i toVector2i() { return new Vector2i(   Arrays.copyOf(getIntArray(), 2)); }
+    public Vector3i toVector3i() { return new Vector3i(   Arrays.copyOf(getIntArray(), 3)); }
+    public Vector4i toVector4i() { return new Vector4i(   Arrays.copyOf(getIntArray(), 4)); }
 
     public static Vector concatenate(Vector... vectors) { return concatenate(Arrays.asList(vectors)); }
     public static Vector concatenate(List<Vector> vectors) {
