@@ -1,5 +1,6 @@
-package engine;
+package engine.managers;
 
+import engine.utils.GameLogic;
 import game.Game;
 import lombok.Getter;
 import org.lwjgl.glfw.GLFWErrorCallback;

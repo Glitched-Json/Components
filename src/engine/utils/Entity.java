@@ -1,6 +1,8 @@
-package engine;
+package engine.utils;
 
 import com.glitched.annotations.Uniform;
+import engine.animation.Animation;
+import engine.managers.*;
 import lombok.Getter;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -19,6 +21,7 @@ public abstract class Entity {
     protected final BoundingBox boundingBox = new BoundingBox(this);
     @Getter private int id = 0;
     @Getter protected String texture;
+    protected final Animation animation = new Animation(this);
 
     public Entity(String model) {this(Model.get(model), "");}
     public Entity(String model, Shader shader) {this(Model.get(model, shader), "");}
@@ -32,12 +35,25 @@ public abstract class Entity {
         this.texture = texture;
     }
 
+    public void move(Vector offset) { position.add(offset.toVector3f()); }
+    public void move(Vector3f offset) { position.add(offset); }
+    public void move(Number x, Number y, Number z) { position.add(x.floatValue(), y.floatValue(), z.floatValue()); }
+    public void rotate(Vector angle) { rotation.add(angle.toVector3f()); }
+    public void rotate(Vector3f angle) { rotation.add(angle); }
+    public void rotate(Number x, Number y, Number z) { rotation.add(x.floatValue(), y.floatValue(), z.floatValue()); }
+    public void setScale(Vector size) { scale.set(size.toVector3f()); }
+    public void setScale(Vector3f size) { scale.set(size); }
+    public void setScale(Number x, Number y, Number z) { scale.set(x.floatValue(), y.floatValue(), z.floatValue()); }
+    public void mulScale(Vector size) { scale.mul(size.toVector3f()); }
+    public void mulScale(Vector3f size) { scale.mul(size); }
+    public void mulScale(Number x, Number y, Number z) { scale.mul(x.floatValue(), y.floatValue(), z.floatValue()); }
+
     public final void checkVisibility() {
         visible = Scene.get().getCamera().isInView(boundingBox.getMin(), boundingBox.getMax());
     }
 
+    public void updateAnimation(double dt) { animation.update(dt); }
     public void update(double dt) {}
-
     public void staticUpdate(double dt) {}
 
     public final void spatialRender() {
@@ -46,7 +62,6 @@ public abstract class Entity {
         render();
         setShader(shader);
     }
-
     public void render() {render(model.shader);}
     public void render(Shader shader) {
         shader.bind();

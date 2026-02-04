@@ -1,5 +1,7 @@
-package engine;
+package engine.managers;
 
+import engine.utils.Camera;
+import engine.utils.Entity;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,7 +41,10 @@ public final class Scene {
 
     public void update(double dt) {
         camera.update(dt);
-        objects.parallelStream().forEach(e -> e.update(dt));
+        objects.parallelStream().forEach(e -> {
+            e.update(dt);
+            e.updateAnimation(dt);
+        });
 
         removeObjects();
         createObjects();

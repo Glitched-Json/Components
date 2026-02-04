@@ -1,7 +1,7 @@
 package game;
 
-import engine.Entity;
-import engine.InputManager;
+import engine.managers.InputManager;
+import engine.utils.Entity;
 
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
 

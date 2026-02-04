@@ -1,7 +1,7 @@
 package game;
 
-import engine.GameLogic;
-import engine.Scene;
+import engine.managers.Scene;
+import engine.utils.GameLogic;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor

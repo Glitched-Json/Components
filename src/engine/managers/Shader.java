@@ -1,6 +1,8 @@
-package engine;
+package engine.managers;
 
 import com.glitched.uniforms.UniformMapper;
+import engine.utils.UniformFunctions;
+import engine.utils.Vector;
 import lombok.Getter;
 import org.joml.Vector4i;
 
@@ -8,7 +10,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static engine.UniformFunctions.*;
+import static engine.utils.UniformFunctions.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
@@ -100,8 +102,8 @@ public final class Shader {
         return offset;
     }
 
-    public Vector getInversionVector(int location) {
-        try { return new Vector(
+    public engine.utils.Vector getInversionVector(int location) {
+        try { return new engine.utils.Vector(
                 layouts.get(location)[6],
                 layouts.get(location)[7],
                 layouts.get(location)[8],

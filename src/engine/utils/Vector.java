@@ -1,4 +1,4 @@
-package engine;
+package engine.utils;
 
 import org.joml.*;
 
@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public final class Vector {
     private final int size;
     private final Number[] values;
@@ -23,6 +23,7 @@ public final class Vector {
     public Vector(Vector4d vector) { this(vector.x, vector.y, vector.z, vector.w); }
     public Vector(Vector4f vector) { this(vector.x, vector.y, vector.z, vector.w); }
     public Vector(Vector4i vector) { this(vector.x, vector.y, vector.z, vector.w); }
+    public Vector(Vector vector) { this(vector.values); this.type = vector.type; }
     public Vector(Number... values) {
         this.values = Arrays.copyOf(values, size = values.length);
     }
@@ -51,10 +52,32 @@ public final class Vector {
     public Vector toRadians() { for (int i=0; i<values.length; i++) values[i] = Math.toRadians(values[i].doubleValue()); return this; }
     public Vector toDegrees() { for (int i=0; i<values.length; i++) values[i] = Math.toDegrees(values[i].doubleValue()); return this; }
 
-    public Vector add(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() + value.doubleValue(); return this; }
-    public Vector sub(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() - value.doubleValue(); return this; }
-    public Vector mul(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() * value.doubleValue(); return this; }
-    public Vector div(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() / value.doubleValue(); return this; }
+    private Vector addScalar(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() + value.doubleValue(); return this; }
+    private Vector subScalar(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() - value.doubleValue(); return this; }
+    private Vector mulScalar(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() * value.doubleValue(); return this; }
+    private Vector divScalar(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() / value.doubleValue(); return this; }
+
+    public Vector add(Number... values) { if (values.length == 1) addScalar(values[0]); else if (values.length > 1) add(new Vector(values)); return this; }
+    public Vector sub(Number... values) { if (values.length == 1) subScalar(values[0]); else if (values.length > 1) sub(new Vector(values)); return this; }
+    public Vector mul(Number... values) { if (values.length == 1) mulScalar(values[0]); else if (values.length > 1) mul(new Vector(values)); return this; }
+    public Vector div(Number... values) { if (values.length == 1) divScalar(values[0]); else if (values.length > 1) div(new Vector(values)); return this; }
+
+    public Vector invert(Number... mask) {
+        boolean allMode = mask.length == 0;
+        int elements = allMode ? values.length : Math.min(mask.length, values.length);
+        for (int i=0; i<elements; i++) values[i] = allMode || (int) Logic.clamp(mask[i], 0, 1) == 1 ?
+                -values[i].doubleValue() : values[i].doubleValue();
+        return this;
+    }
+
+    public Vector flip(Number... mask) {
+        return invert(mask).add(mask);
+    }
+
+    public Vector add(Vector v) { for (int i=0; i<size; i++) values[i] = values[i].doubleValue() + v.getDouble(i); return this; }
+    public Vector sub(Vector v) { for (int i=0; i<size; i++) values[i] = values[i].doubleValue() - v.getDouble(i); return this; }
+    public Vector mul(Vector v) { for (int i=0; i<size; i++) values[i] = values[i].doubleValue() * v.getDouble(i); return this; }
+    public Vector div(Vector v) { for (int i=0; i<size; i++) try {values[i] = values[i].doubleValue() / v.getDouble(i);} catch (ArithmeticException ignored) {} return this; }
 
     public Vector2d toVector2d() { return new Vector2d(Arrays.copyOf(toDoubleArray(), 2)); }
     public Vector3d toVector3d() { return new Vector3d(Arrays.copyOf(toDoubleArray(), 3)); }
@@ -102,7 +125,42 @@ public final class Vector {
         return this;
     }
 
+    public Vector set(Vector vector) {
+        System.arraycopy(vector.values, 0, values, 0, Math.min(size, vector.size));
+        return this;
+    }
+
     // --- Getter Methods ----------------------------------------------------------------------------------------------
+
+    public byte xb() { return getByte(0); }
+    public byte yb() { return getByte(1); }
+    public byte zb() { return getByte(2); }
+    public byte wb() { return getByte(3); }
+
+    public short xs() { return getShort(0); }
+    public short ys() { return getShort(1); }
+    public short zs() { return getShort(2); }
+    public short ws() { return getShort(3); }
+
+    public int xi() { return getInt(0); }
+    public int yi() { return getInt(1); }
+    public int zi() { return getInt(2); }
+    public int wi() { return getInt(3); }
+
+    public long xl() { return getLong(0); }
+    public long yl() { return getLong(1); }
+    public long zl() { return getLong(2); }
+    public long wl() { return getLong(3); }
+
+    public float xf() { return getFloat(0); }
+    public float yf() { return getFloat(1); }
+    public float zf() { return getFloat(2); }
+    public float wf() { return getFloat(3); }
+
+    public double xd() { return getDouble(0); }
+    public double yd() { return getDouble(1); }
+    public double zd() { return getDouble(2); }
+    public double wd() { return getDouble(3); }
 
     public byte[] toByteArray() {
         byte[] result = new byte[size];

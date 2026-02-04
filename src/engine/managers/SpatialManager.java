@@ -1,5 +1,6 @@
-package engine;
+package engine.managers;
 
+import engine.utils.Logic;
 import lombok.Getter;
 
 import java.nio.ByteBuffer;

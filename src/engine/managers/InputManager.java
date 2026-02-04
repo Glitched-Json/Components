@@ -1,4 +1,4 @@
-package engine;
+package engine.managers;
 
 import lombok.Getter;
 import lombok.Setter;

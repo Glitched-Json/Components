@@ -1,6 +1,6 @@
 package game;
 
-import engine.Entity;
+import engine.utils.Entity;
 
 @SuppressWarnings("unused")
 public class Square extends Entity {

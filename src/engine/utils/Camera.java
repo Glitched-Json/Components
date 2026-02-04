@@ -1,6 +1,9 @@
-package engine;
+package engine.utils;
 
 import com.glitched.annotations.Uniform;
+import engine.managers.DataManager;
+import engine.managers.InputManager;
+import engine.managers.Window;
 import lombok.Getter;
 import lombok.Setter;
 import org.joml.Matrix4f;

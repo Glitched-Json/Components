@@ -1,5 +1,7 @@
-package engine;
+package engine.managers;
 
+import engine.utils.BoundingBox;
+import engine.utils.Vector;
 import lombok.Getter;
 
 import java.io.BufferedReader;
@@ -66,7 +68,7 @@ public final class Model {
 
     // -----------------------------------------------------------------------------------------------------------------
 
-    private final Map<String, List<Vector>> fields = new HashMap<>();
+    private final Map<String, List<engine.utils.Vector>> fields = new HashMap<>();
     public final Shader shader;
     private int type = GL_POINTS;
     private int activeType = 4;
@@ -126,14 +128,14 @@ public final class Model {
         List<String> sortedFields = new ArrayList<>(fields.keySet());
         int vertexSize = shader.getVertexSize();
 
-        List<Vector> buffer = new ArrayList<>();
+        List<engine.utils.Vector> buffer = new ArrayList<>();
         List<Integer> indices = new ArrayList<>();
-        Map<Vector, Integer> seen = new HashMap<>();
+        Map<engine.utils.Vector, Integer> seen = new HashMap<>();
 
         int counter = 0;
         if (fields.containsKey(INDICES_FIELD)) {
             vertexCount = fields.get(INDICES_FIELD).size();
-            for (Vector index: fields.get(INDICES_FIELD)) {
+            for (engine.utils.Vector index: fields.get(INDICES_FIELD)) {
                 if (seen.containsKey(index)) {
                     indices.add(seen.get(index));
                     continue;
@@ -142,19 +144,19 @@ public final class Model {
                 seen.put(index, counter++);
 
                 int i = 0;
-                Vector v = Vector.ofSize(vertexSize);
+                engine.utils.Vector v = engine.utils.Vector.ofSize(vertexSize);
                 for (String field: sortedFields) {
                     if (field.equals("Indices")) continue;
 
                     int ind = 0;
                     try { ind = index.getInt(i++); } catch (IndexOutOfBoundsException ignored) {}
 
-                    Vector v2 = new Vector();
+                    engine.utils.Vector v2 = new engine.utils.Vector();
                     try { v2 = fields.get(field).get(ind); } catch (IndexOutOfBoundsException ignored) {}
 
                     int layoutID = shader.getFieldLocation(field);
                     int offset = shader.getLayoutOffset(layoutID);
-                    Vector inversion = shader.getInversionVector(layoutID);
+                    engine.utils.Vector inversion = shader.getInversionVector(layoutID);
                     for (int j=0; j<v2.size(); j++)
                         v.set(offset+j, inversion.getInt(j) == 1 ? 1 - v2.get(j).doubleValue() : v2.get(j));
                 }
@@ -163,11 +165,11 @@ public final class Model {
         } else {
             vertexCount = sortedFields.stream().mapToInt(s -> fields.get(s).size()).max().orElse(0);
             for (int i = 0; i<vertexCount; i++) {
-                Vector v = Vector.ofSize(vertexSize);
+                engine.utils.Vector v = engine.utils.Vector.ofSize(vertexSize);
                 for (String field: sortedFields) {
-                    Vector v2;
+                    engine.utils.Vector v2;
                     try { v2 = fields.get(field).get(i); }
-                    catch (IndexOutOfBoundsException ignored) { v2 = new Vector(); }
+                    catch (IndexOutOfBoundsException ignored) { v2 = new engine.utils.Vector(); }
 
                     int offset = shader.getLayoutOffset(shader.getFieldLocation(field));
                     for (int j=0; j<v2.size(); j++)
@@ -185,17 +187,17 @@ public final class Model {
         }
 
         boundingBox.setMin(
-                buffer.stream().mapToDouble(Vector::getFirstDouble).min().orElse(0),
+                buffer.stream().mapToDouble(engine.utils.Vector::getFirstDouble).min().orElse(0),
                 buffer.stream().mapToDouble(v -> v.getDouble(1)).min().orElse(0),
                 buffer.stream().mapToDouble(v -> v.getDouble(2)).min().orElse(0)
         );
         boundingBox.setMax(
-                buffer.stream().mapToDouble(Vector::getFirstDouble).max().orElse(0),
+                buffer.stream().mapToDouble(engine.utils.Vector::getFirstDouble).max().orElse(0),
                 buffer.stream().mapToDouble(v -> v.getDouble(1)).max().orElse(0),
                 buffer.stream().mapToDouble(v -> v.getDouble(2)).max().orElse(0)
         );
 
-        double[] flattened = buffer.stream().map(Vector::toDoubleArray).flatMapToDouble(Arrays::stream).toArray();
+        double[] flattened = buffer.stream().map(engine.utils.Vector::toDoubleArray).flatMapToDouble(Arrays::stream).toArray();
         verticesBuffer = new float[flattened.length];
         IntStream.range(0, flattened.length).forEach(i -> verticesBuffer[i] = (float) flattened[i]);
 
@@ -204,7 +206,7 @@ public final class Model {
 
     private String parseModel(String model) {
         try {
-            List<Vector> list = null;
+            List<engine.utils.Vector> list = null;
             String line, file;
 
             InputStream stream = ClassLoader.getSystemResourceAsStream(file = "models/%s".formatted(model));
@@ -227,7 +229,7 @@ public final class Model {
         return null;
     }
 
-    private List<Vector> decode$$(String line) {
+    private List<engine.utils.Vector> decode$$(String line) {
         type = switch (line.trim().toLowerCase().replaceFirst("\\$\\$\\s*(.*)", "$1").replaceAll("\\s+", "_")) {
             case "points" -> GL_POINTS;
             case "lines" -> GL_LINES;
@@ -260,7 +262,7 @@ public final class Model {
         return getField();
     }
 
-    private List<Vector> decode$(String line) {
+    private List<engine.utils.Vector> decode$(String line) {
         Matcher matcher = pattern.matcher(line);
         if (!matcher.find()) return null;
 
@@ -284,22 +286,22 @@ public final class Model {
         return getField();
     }
 
-    private void decode(String line, List<Vector> list) {
+    private void decode(String line, List<engine.utils.Vector> list) {
         if (list == null) return;
 
         String[] vectors = line.trim().split("\\|");
         for (String v: vectors)
-            list.add(new Vector(Arrays.stream(v.trim().split("\\s+"))
+            list.add(new engine.utils.Vector(Arrays.stream(v.trim().split("\\s+"))
                     .map(s -> s.isBlank() ? "0" : s)
                     .map(Float::parseFloat)
                     .toArray(Float[]::new)
             ).setType(activeType));
     }
 
-    private List<Vector> getField() {
+    private List<engine.utils.Vector> getField() {
         if (activeParameter == null) return null;
 
-        List<Vector> list;
+        List<engine.utils.Vector> list;
         if (fields.containsKey(activeParameter)) list = fields.get(activeParameter);
         else fields.put(activeParameter, list = new ArrayList<>());
         return list;

@@ -1,4 +1,4 @@
-package engine;
+package engine.utils;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

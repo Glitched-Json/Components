@@ -1,4 +1,6 @@
-package engine;
+package engine.managers;
+
+import engine.utils.Logic;
 
 import java.io.BufferedReader;
 import java.io.File;

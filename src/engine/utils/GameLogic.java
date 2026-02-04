@@ -1,4 +1,4 @@
-package engine;
+package engine.utils;
 
 public abstract class GameLogic {
     protected GameLogic() {}
