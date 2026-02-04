@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("UnusedReturnValue")
 public class Animation {
     private final Entity entity;
     private final Map<String, AnimationMapping> mappings = new HashMap<>(){
@@ -31,10 +32,13 @@ public class Animation {
     private final List<KeyFrame> keyFrames = new ArrayList<>();
     private double t;
     private boolean running = false;
-    public void start() {
+    public boolean start() { return start(false); }
+    public boolean start(boolean runImmediately) {
+        if (running && !runImmediately) return false;
         v.clear();
         t=0;
         running = true;
+        return true;
     }
 
     public void addMapping(String field, String method) { addMapping(field, method, false); }

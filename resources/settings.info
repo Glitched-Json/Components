@@ -18,4 +18,4 @@ mouse_sensitivity: 0.05
 show_metrics_on_window_title    : true
 show_initialization_messages    : false
 show_texture_atlas_image_loading: false
-texture_atlas_buffer_size       : 1
+texture_atlas_buffer_size       : 3

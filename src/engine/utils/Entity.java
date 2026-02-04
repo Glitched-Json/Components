@@ -6,6 +6,7 @@ import engine.managers.*;
 import lombok.Getter;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
 
@@ -21,6 +22,7 @@ public abstract class Entity {
     protected final BoundingBox boundingBox = new BoundingBox(this);
     @Getter private int id = 0;
     @Getter protected String texture;
+    private int textureRows = 1, textureColumns = 1, textureX = 0, textureY = 0;
     protected final Animation animation = new Animation(this);
 
     public Entity(String model) {this(Model.get(model), "");}
@@ -91,6 +93,11 @@ public abstract class Entity {
     public boolean isClicked() { return isClicked(GLFW_MOUSE_BUTTON_LEFT); }
     public boolean isClicked(int button) { return isHighlighted() && InputManager.isButtonPressed(button); }
 
+    protected void setTextureRows(int textureRows) { this.textureRows = Math.max(textureRows, 1); }
+    protected void setTextureColumns(int textureColumns) { this.textureColumns = Math.max(textureColumns, 1); }
+    protected void setTextureX(int textureX) { this.textureX = (int) Logic.clamp(textureX, 0, textureColumns-1);}
+    protected void setTextureY(int textureY) { this.textureY = (int) Logic.clamp(textureY, 0, textureRows-1);}
+
     @Uniform
     private float[] transform() {
         return new Matrix4f().identity()
@@ -109,6 +116,11 @@ public abstract class Entity {
 
     @Uniform("AtlasRemapping")
     private float[] atlasRemapping() {
-        return new Vector(TextureAtlas.getBounds(texture)).toFloatArray();
+        Vector4f bounds = TextureAtlas.getBounds(texture);
+        float absGridW = (bounds.z - bounds.x) / textureColumns + bounds.x;
+        float absGridH = (bounds.w - bounds.y) / textureRows + bounds.y;
+        float gridW = absGridW - bounds.x;
+        float gridH = absGridH - bounds.y;
+        return new Vector(bounds.x, bounds.y, absGridW, absGridH).add(gridW * textureX, gridH * textureY, gridW * textureX, gridH * textureY).toFloatArray();
     }
 }
