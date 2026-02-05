@@ -13,5 +13,5 @@ public class Square extends Entity {
     }
 
     @Uniform("Input")
-    private float[] input() { return new Vector(new Vector3f(0.3f)).toFloatArray(); }
+    private float[] input() { return new Vector(new Vector3f(0.5f)).toFloatArray(); }
 }

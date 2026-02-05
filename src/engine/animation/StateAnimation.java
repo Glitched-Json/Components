@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("UnusedReturnValue")
-public class Animation {
+public class StateAnimation {
     private final Entity entity;
     private final Map<String, AnimationMapping> mappings = new HashMap<>(){
         private void addMapping(String key, String method) {
@@ -24,7 +24,7 @@ public class Animation {
         }
     };
 
-    public Animation(Entity entity) {
+    public StateAnimation(Entity entity) {
         this.entity = entity;
     }
 

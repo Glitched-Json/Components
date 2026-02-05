@@ -1,7 +1,8 @@
 package engine.utils;
 
 import com.glitched.annotations.Uniform;
-import engine.animation.Animation;
+import engine.animation.SpriteAnimation;
+import engine.animation.StateAnimation;
 import engine.managers.*;
 import lombok.Getter;
 import org.joml.Matrix4f;
@@ -23,7 +24,8 @@ public abstract class Entity {
     @Getter private int id = 0;
     @Getter protected String texture;
     private int textureRows = 1, textureColumns = 1, textureX = 0, textureY = 0;
-    protected final Animation animation = new Animation(this);
+    protected final StateAnimation stateAnimation = new StateAnimation(this);
+    protected final SpriteAnimation spriteAnimation = new SpriteAnimation(this);
 
     public Entity(String model) {this(Model.get(model), "");}
     public Entity(String model, Shader shader) {this(Model.get(model, shader), "");}
@@ -54,7 +56,7 @@ public abstract class Entity {
         visible = Scene.get().getCamera().isInView(boundingBox.getMin(), boundingBox.getMax());
     }
 
-    public void updateAnimation(double dt) { animation.update(dt); }
+    public void updateAnimation(double dt) { stateAnimation.update(dt); spriteAnimation.update(dt); }
     public void update(double dt) {}
     public void staticUpdate(double dt) {}
 
@@ -93,10 +95,10 @@ public abstract class Entity {
     public boolean isClicked() { return isClicked(GLFW_MOUSE_BUTTON_LEFT); }
     public boolean isClicked(int button) { return isHighlighted() && InputManager.isButtonPressed(button); }
 
-    protected void setTextureRows(int textureRows) { this.textureRows = Math.max(textureRows, 1); }
-    protected void setTextureColumns(int textureColumns) { this.textureColumns = Math.max(textureColumns, 1); }
-    protected void setTextureX(int textureX) { this.textureX = (int) Logic.clamp(textureX, 0, textureColumns-1);}
-    protected void setTextureY(int textureY) { this.textureY = (int) Logic.clamp(textureY, 0, textureRows-1);}
+    public void setTextureRows(int textureRows) { this.textureRows = Math.max(textureRows, 1); }
+    public void setTextureColumns(int textureColumns) { this.textureColumns = Math.max(textureColumns, 1); }
+    public void setTextureX(int textureX) { this.textureX = (int) Logic.clamp(textureX, 0, textureColumns-1);}
+    public void setTextureY(int textureY) { this.textureY = (int) Logic.clamp(textureY, 0, textureRows-1);}
 
     @Uniform
     private float[] transform() {
