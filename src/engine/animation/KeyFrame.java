@@ -2,6 +2,7 @@ package engine.animation;
 
 import engine.utils.Entity;
 import engine.utils.Vector;
+import lombok.Getter;
 import org.joml.Vector3f;
 
 import java.lang.reflect.InvocationTargetException;
@@ -10,7 +11,15 @@ import java.util.Map;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public final class KeyFrame {
+    public static final int LINEAR = 0, EASE_IN = 1, EASE_OUT = 2, EASE_IN_OUT = 3;
+
     private Map<String, Vector> fields = new HashMap<>();
+    @Getter private final double time;
+    private int mode = LINEAR;
+    private double power = 1;
+
+    public KeyFrame() { this(1); }
+    public KeyFrame(Number time) { this.time = time.doubleValue(); }
 
     public KeyFrame clear() { fields.clear(); return this; }
     public KeyFrame set(String field, Number... values) {
@@ -31,14 +40,25 @@ public final class KeyFrame {
     public KeyFrame setScale(Vector scale)     { return setScale(scale.toVector3f()); }
     public KeyFrame setScale(Vector3f scale)   { return set("size", scale.x, scale.y, scale.z); }
     public KeyFrame setScale(Number... values) { return set("size", values); }
+    public KeyFrame setMode(int mode) { return setMode(mode, 1); }
+    public KeyFrame setMode(int mode, Number power) { this.mode = mode; this.power = Math.max(power.doubleValue(), 1e-6); return this; }
 
-    public KeyFrame mix(KeyFrame keyFrameA, KeyFrame keyFrameB, float t) {
+    public KeyFrame mix(KeyFrame keyFrameA, KeyFrame keyFrameB, double t) {
+        t /= keyFrameB.time;
+        final double timePower = t * keyFrameB.power;
+        final double tVar = switch (keyFrameB.mode) {
+            case EASE_IN -> timePower / (timePower - t + 1);
+            case EASE_OUT -> -t / (timePower - keyFrameB.power - t);
+            case EASE_IN_OUT -> t < 0.5 ? timePower / (2*(timePower - t + 0.5)) : (0.5 - t) / (2*(timePower - keyFrameB.power - t + 0.5)) + 0.5;
+            default -> t;
+        };
+
         set(keyFrameA);
         for (Map.Entry<String, Vector> entry: fields.entrySet())
-            if (keyFrameB.fields.containsKey(entry.getKey())) fields.get(entry.getKey()).mul(1-t);
+            if (keyFrameB.fields.containsKey(entry.getKey())) fields.get(entry.getKey()).mul(1-tVar);
 
         Map<String, Vector> temp = copyFields(keyFrameB.fields);
-        temp.values().forEach(v -> v.mul(t));
+        temp.values().forEach(v -> v.mul(tVar));
 
         add(temp);
 
