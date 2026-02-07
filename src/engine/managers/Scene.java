@@ -14,16 +14,6 @@ import java.util.Map;
 public final class Scene {
     private static final Map<String, Scene> scenes = new HashMap<>();
     private static Scene activeScene = get("main");
-    private final List<Entity>
-            objects = new ArrayList<>(),
-            toCreate = new ArrayList<>(),
-            toDestroy = new ArrayList<>(),
-            temp = new ArrayList<>();
-    @Getter private final Camera camera = new Camera();
-
-    // -----------------------------------------------------------------------------------------------------------------
-    private int lastID = 1;
-    private Scene() {}
 
     @NotNull public static Scene get() { return activeScene; }
 
@@ -33,6 +23,17 @@ public final class Scene {
         scenes.put(scene, s);
         return s;
     }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    private int lastID = 1;
+    private final List<Entity>
+            objects = new ArrayList<>(),
+            toCreate = new ArrayList<>(),
+            toDestroy = new ArrayList<>(),
+            temp = new ArrayList<>();
+    @Getter private final Camera camera = new Camera();
+
+    private Scene() {}
 
     public void setActive() {
         activeScene = this;
@@ -79,6 +80,8 @@ public final class Scene {
     public void destroy(Entity entity) {
         toDestroy.add(entity);
     }
+
+    public List<Entity> getObjects() { return new ArrayList<>(objects); }
 
     private void removeObjects() {
         while (!toDestroy.isEmpty()) {

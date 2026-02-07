@@ -8,9 +8,13 @@ import lombok.NoArgsConstructor;
 public class Game extends GameLogic {
 
     public void initialize() {
-        // Scene.get().create(new Square(0, 0, 3));
-        // Scene.get().create(new Sprite(0, 0, 2.9));
-        Scene.get().create(new Box(0, 0, 3));
+        for (int i=0; i<360; i+=20)
+            Scene.get().create(new Circle(
+                    Math.cos(Math.toRadians(i))*2,
+                    Math.sin(Math.toRadians(i))*2,
+                    3
+                    , -Math.cos(Math.toRadians(i)), -Math.sin(Math.toRadians(i)), 0
+            ));
     }
 
     public void update(double dt) {

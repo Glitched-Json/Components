@@ -1,11 +1,11 @@
-tps: 60
+tps: 1000
 fps: 120
 uncapped_FPS: false
 vSync       : false
 
-spatial_detail   : 0.1 // [0.1, 1] - Texture size in comparison to Window size
+spatial_detail   : 0.1   // [0.1, 1] - Texture size in comparison to Window size
 spatial_fps      : 20
-spatial_match_fps: false
+spatial_match_fps: false // overrides spatial_fps, redraws once per render frame
 
 depth_test           : true
 anti_aliasing_samples: 4

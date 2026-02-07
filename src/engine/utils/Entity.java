@@ -14,7 +14,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
 @SuppressWarnings("unused")
 public abstract class Entity {
     protected final Vector3f
-            position = new Vector3f(0),
+            position = new Vector3f(0), speed = new Vector3f(),
             rotation = new Vector3f(0),
             scale = new Vector3f(1);
     private final String modelName;
@@ -45,6 +45,7 @@ public abstract class Entity {
     public void rotate(Vector angle) { rotation.add(angle.toVector3f()); }
     public void rotate(Vector3f angle) { rotation.add(angle); }
     public void rotate(Number x, Number y, Number z) { rotation.add(x.floatValue(), y.floatValue(), z.floatValue()); }
+    public void setScale(Number size) { setScale(size, size, size); }
     public void setScale(Vector size) { scale.set(size.toVector3f()); }
     public void setScale(Vector3f size) { scale.set(size); }
     public void setScale(Number x, Number y, Number z) { scale.set(x.floatValue(), y.floatValue(), z.floatValue()); }
@@ -58,7 +59,11 @@ public abstract class Entity {
 
     public void updateAnimation(double dt) { stateAnimation.update(dt); spriteAnimation.update(dt); }
     public void update(double dt) {}
-    public void staticUpdate(double dt) {}
+    public void staticUpdate(double dt) { updatePhysics(dt); }
+
+    protected void updatePhysics(double dt) {
+        position.add(new Vector3f(speed).mul((float) dt));
+    }
 
     public final void spatialRender() {
         Shader shader = model.shader;
@@ -104,10 +109,10 @@ public abstract class Entity {
     private float[] transform() {
         return new Matrix4f().identity()
                 .translate(position.x, position.y, position.z)
-                .scale(scale.x, scale.y, scale.z)
-                .rotateX((float) Math.toRadians(rotation.x))
-                .rotateY((float) Math.toRadians(rotation.y))
-                .rotateZ((float) Math.toRadians(rotation.z))
+                .scale(getScale().x, getScale().y, getScale().z)
+                .rotateX((float) Math.toRadians(getRotation().x))
+                .rotateY((float) Math.toRadians(getRotation().y))
+                .rotateZ((float) Math.toRadians(getRotation().z))
                 .get(new float[16]);
     }
 
