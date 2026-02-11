@@ -147,13 +147,11 @@ public final class Camera {
 
     @SuppressWarnings("unused")
     @Uniform("view")
-    public float[] getViewMatrix() {
-        return new Matrix4f().lookAt(new Vector3f(position), new Vector3f(position).add(new Vector3f(front)), new Vector3f(up)).get(new float[16]);
-    }
+    public float[] getViewMatrix() { return getViewMatrixObject().get(new float[16]); }
+    public Matrix4f getViewMatrixObject() { return new Matrix4f().lookAt(new Vector3f(position), new Vector3f(position).add(new Vector3f(front)), new Vector3f(up)); }
 
     @SuppressWarnings("unused")
     @Uniform("projection")
-    public float[] getProjectionMatrix() {
-        return new Matrix4f().perspective((float) toRadians(FOV), Window.getAspectRatio(), ZNear, ZFar).get(new float[16]);
-    }
+    public float[] getProjectionMatrix() { return getProjectionMatrixObject().get(new float[16]); }
+    public Matrix4f getProjectionMatrixObject() { return new Matrix4f().perspective((float) toRadians(FOV), Window.getAspectRatio(), ZNear, ZFar); }
 }

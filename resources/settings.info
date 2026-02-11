@@ -1,4 +1,4 @@
-tps: 1000
+tps: 100
 fps: 120
 uncapped_FPS: false
 vSync       : false

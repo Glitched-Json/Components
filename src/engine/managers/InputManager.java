@@ -1,10 +1,10 @@
 package engine.managers;
 
+import engine.utils.Logic;
+import engine.utils.Vector;
 import lombok.Getter;
 import lombok.Setter;
-import org.joml.Vector2d;
-import org.joml.Vector3i;
-import org.joml.Vector4i;
+import org.joml.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -66,4 +66,36 @@ public final class InputManager {
     public static boolean isButtonPressed(int key) {return mouseInputs.getOrDefault(key, -1).equals(0);}
     public static boolean isButtonDown(int key) {return mouseInputs.getOrDefault(key, -1).equals(1) || isButtonPressed(key);}
     public static boolean isButtonReleased(int key) {return mouseInputs.getOrDefault(key, -1).equals(2);}
+
+    public static Vector getIntersectionOrElse(Vector planePoint, Vector planeNormal, Vector fallback) { Vector v = getIntersection(planePoint, planeNormal); if (v == null) return fallback; return v;}
+    public static Vector getIntersectionOrElse(Vector planePoint, Vector planeNormal, Vector linePoint, Vector lineDirection, Vector fallback) { Vector v = getIntersection(planePoint, planeNormal, linePoint, lineDirection); if (v == null) return fallback; return v;}
+    public static Vector getIntersection(Vector planePoint, Vector planeNormal) { return getIntersection(planePoint, planeNormal, new Vector(Scene.get().getCamera().getPosition()), new Vector(getMouseRay())); }
+    public static Vector getIntersection(Vector planePoint, Vector planeNormal, Vector linePoint, Vector lineDirection) {
+        double dot = planeNormal.dotDouble(lineDirection);
+        if (dot == 0) return null;
+        double t = (planeNormal.dotDouble(planePoint) - planeNormal.dotDouble(linePoint)) / dot;
+        return new Vector(linePoint).add(new Vector(lineDirection.mul(t)));
+    }
+
+    public static Vector3d getMouseRay() {
+        Vector4f rayWorld = Scene
+                .get()
+                .getCamera()
+                .getViewMatrixObject()
+                .invert()
+                .transform(Scene // Eye Coordinates
+                        .get()
+                        .getCamera()
+                        .getProjectionMatrixObject()
+                        .invert()
+                        .transform(new Vector4f( // Clip Coordinates
+                                Logic.remap(0, Window.getWidth(), -1f,  1f, InputManager.getXPosition()),
+                                Logic.remap(0, Window.getHeight(), 1f, -1f, InputManager.getYPosition()),
+                                -1f,
+                                1f)
+                        ).mul(1f, 1f, 0f, 0f)
+                        .add(0f, 0f, -1f, 0f)
+                );
+        return new Vector3d(rayWorld.x, rayWorld.y, rayWorld.z).normalize();
+    }
 }

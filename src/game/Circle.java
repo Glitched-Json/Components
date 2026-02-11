@@ -1,19 +1,23 @@
 package game;
 
+import engine.managers.InputManager;
+import engine.managers.Scene;
 import engine.utils.Sphere;
+import engine.utils.Vector;
 
 @SuppressWarnings("unused")
 public class Circle extends Sphere {
-
-    public Circle(Number x, Number y, Number z) { this(x, y, z, 0, 0, 0); }
-    public Circle(Number x, Number y, Number z, Number xVelocity, Number yVelocity, Number zVelocity) {
-        super(x, y, z, xVelocity, yVelocity, zVelocity);
+    private final Vector plane;
+    public Circle(Number x, Number y, Number z) {
+        super(x, y, z);
+        plane = new Vector(x, y, z);
         diameter = 0.1f;
-        speedConservation = 0.6f;
     }
 
     @Override
     public void update(double dt) {
-        if (isClicked()) c.flip(1, 0, 1);
+        position.set(InputManager.getIntersectionOrElse(plane, new Vector(Scene.get().getCamera().getFront()), new Vector(0, 0, 0)).toVector3f());
     }
+
+    @Override public void staticUpdate(double dt) {}
 }

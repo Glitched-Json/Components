@@ -49,8 +49,8 @@ public final class Vector {
         return this;
     }
 
-    public Vector toRadians() { for (int i=0; i<values.length; i++) values[i] = Math.toRadians(values[i].doubleValue()); return this; }
-    public Vector toDegrees() { for (int i=0; i<values.length; i++) values[i] = Math.toDegrees(values[i].doubleValue()); return this; }
+    public double toRadians() { Vector v = new Vector(this).normalize(); return Math.atan2(v.yd(), v.xd()); }
+    public double toDegrees() { return Math.toDegrees(toRadians()); }
 
     private Vector addScalar(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() + value.doubleValue(); return this; }
     private Vector subScalar(Number value) { for (int i=0; i<values.length; i++) values[i] = values[i].doubleValue() - value.doubleValue(); return this; }
@@ -79,6 +79,8 @@ public final class Vector {
     public Vector mul(Vector v) { for (int i=0; i<size; i++) values[i] = values[i].doubleValue() * v.getDouble(i); return this; }
     public Vector div(Vector v) { for (int i=0; i<size; i++) try {values[i] = values[i].doubleValue() / v.getDouble(i);} catch (ArithmeticException ignored) {} return this; }
 
+    public Vector normalize() { double l = length(); if (l != 0) for (int i=0; i<size; i++) values[i] = values[i].doubleValue() / l; return this; }
+
     public Vector2d toVector2d() { return new Vector2d(Arrays.copyOf(toDoubleArray(), 2)); }
     public Vector3d toVector3d() { return new Vector3d(Arrays.copyOf(toDoubleArray(), 3)); }
     public Vector4d toVector4d() { return new Vector4d(Arrays.copyOf(toDoubleArray(), 4)); }
@@ -102,6 +104,9 @@ public final class Vector {
         }
         return result;
     }
+
+    public static Vector fromRadians(Number radians) { return new Vector(Math.cos(radians.doubleValue()), Math.sin(radians.doubleValue()), 0); }
+    public static Vector fromDegrees(Number degrees) { return fromRadians(Math.toRadians(degrees.doubleValue())); }
 
     /**
      * @param type The primitive type to become default.
@@ -161,6 +166,15 @@ public final class Vector {
     public double yd() { return getDouble(1); }
     public double zd() { return getDouble(2); }
     public double wd() { return getDouble(3); }
+
+    public double length() { return Math.sqrt(Arrays.stream(values).mapToDouble(n -> n.doubleValue() * n.doubleValue()).sum()); }
+
+    public byte   dotByte  (Vector vector) { return (byte)  IntStream.range(0, Math.max(size, vector.size)).map(i -> (byte) (getByte(i) * vector.getByte(i)))     .reduce(0, (a, b) -> (byte) (a + b)); }
+    public short  dotShort (Vector vector) { return (short) IntStream.range(0, Math.max(size, vector.size)).map(i -> (short) (getShort(i) * vector.getShort(i)))  .reduce(0, (a, b) -> (short) (a + b)); }
+    public int    dotInt   (Vector vector) { return         IntStream.range(0, Math.max(size, vector.size)).map(i -> (getInt(i) * vector.getInt(i)))              .sum(); }
+    public long   dotLong  (Vector vector) { return         IntStream.range(0, Math.max(size, vector.size)).mapToLong(i -> (getLong(i) * vector.getLong(i)))      .sum(); }
+    public float  dotFloat (Vector vector) { return (float) IntStream.range(0, Math.max(size, vector.size)).mapToDouble(i -> (getFloat(i) * vector.getFloat(i)))  .reduce(0, (a, b) -> (float) (a + b)); }
+    public double dotDouble(Vector vector) { return         IntStream.range(0, Math.max(size, vector.size)).mapToDouble(i -> (getDouble(i) * vector.getDouble(i))).sum(); }
 
     public byte[] toByteArray() {
         byte[] result = new byte[size];
