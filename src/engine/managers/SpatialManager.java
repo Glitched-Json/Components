@@ -12,6 +12,7 @@ public final class SpatialManager {
     private static int fbo, color;
     private static int width, height;
     private static boolean initialized = false;
+    @Getter private static boolean paused = false;
     private static final ByteBuffer buffer = createByteBuffer(3);
     @Getter private static int id = 0;
 
@@ -48,6 +49,9 @@ public final class SpatialManager {
     private static void setup(String errorMessage) {
         width = (int) (Window.getWidth() * DataManager.getSettingClamped("spatial_detail", 0.1, 1));
         height = (int) (Window.getHeight() * DataManager.getSettingClamped("spatial_detail", 0.1, 1));
+
+        //noinspection AssignmentUsedAsCondition
+        if (paused = width == 0 || height == 0) return;
 
         bind();
         createTexture();
