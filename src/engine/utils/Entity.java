@@ -108,7 +108,7 @@ public abstract class Entity {
     @Uniform
     private float[] transform() {
         return new Matrix4f().identity()
-                .translate(position.x, position.y, position.z)
+                .translate(getPosition().x, getPosition().y, getPosition().z)
                 .scale(getScale().x, getScale().y, getScale().z)
                 .rotateX((float) Math.toRadians(getRotation().x))
                 .rotateY((float) Math.toRadians(getRotation().y))

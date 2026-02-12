@@ -154,4 +154,8 @@ public final class Camera {
     @Uniform("projection")
     public float[] getProjectionMatrix() { return getProjectionMatrixObject().get(new float[16]); }
     public Matrix4f getProjectionMatrixObject() { return new Matrix4f().perspective((float) toRadians(FOV), Window.getAspectRatio(), ZNear, ZFar); }
+
+    @Uniform("time")
+    @SuppressWarnings("unused")
+    private float[] getTime() { return new float[]{(float) glfwGetTime()}; }
 }

@@ -65,12 +65,18 @@ public final class Scene {
     public void renderSpatial() {
         Shader.get("spatial_shader").bind();
         Shader.get().applyUniforms(camera);
-        objects.stream().filter(Entity::isVisible).forEach(Entity::spatialRender);
+        objects.stream()
+                .filter(Entity::isVisible)
+                .sorted((a, b) -> Double.compare(b.getPosition().z, a.getPosition().z))
+                .forEach(Entity::spatialRender);
     }
 
     public void render() {
         Shader.get().applyUniforms(camera);
-        objects.stream().filter(Entity::isVisible).forEach(Entity::render);
+        objects.stream()
+                .filter(Entity::isVisible)
+                .sorted((a, b) -> Double.compare(b.getPosition().z, a.getPosition().z))
+                .forEach(Entity::render);
     }
 
     public void create(Entity entity) {

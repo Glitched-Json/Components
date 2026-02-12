@@ -79,7 +79,10 @@ public final class Vector {
     public Vector mul(Vector v) { for (int i=0; i<size; i++) values[i] = values[i].doubleValue() * v.getDouble(i); return this; }
     public Vector div(Vector v) { for (int i=0; i<size; i++) try {values[i] = values[i].doubleValue() / v.getDouble(i);} catch (ArithmeticException ignored) {} return this; }
 
+    public Vector normalize(Number length) { return normalize().mul(length); }
     public Vector normalize() { double l = length(); if (l != 0) for (int i=0; i<size; i++) values[i] = values[i].doubleValue() / l; return this; }
+
+    public Vector swap(Number indexA, Number indexB) { double t = getDouble(indexA.intValue()); set(indexA.intValue(), getDouble(indexB.intValue())); set(indexB.intValue(), t); return this; }
 
     public Vector2d toVector2d() { return new Vector2d(Arrays.copyOf(toDoubleArray(), 2)); }
     public Vector3d toVector3d() { return new Vector3d(Arrays.copyOf(toDoubleArray(), 3)); }

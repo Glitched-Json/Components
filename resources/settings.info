@@ -8,6 +8,7 @@ spatial_fps      : 20
 spatial_match_fps: false // overrides spatial_fps, redraws once per render frame
 
 depth_test           : true
+blend_test           : true
 anti_aliasing_samples: 4
 
 // ---------------------------------------------------------------------------------------------------------------------

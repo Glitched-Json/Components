@@ -58,6 +58,7 @@ public final class Shader {
 
     private final int VAO, stride;
     @Getter private int vertexSize;
+    private int activeVBO = 0;
 
     private Shader(String file) {
         String filepath = "shaders/" + (fileName = file) + ".glsl";
@@ -356,7 +357,8 @@ public final class Shader {
     }
 
     public void bindVBO(int VBO) {
-        glBindVertexBuffer(0, VBO, 0, stride);
+        if (activeVBO == VBO) return;
+        glBindVertexBuffer(0, activeVBO = VBO, 0, stride);
     }
 
     private void link(int vertexShader, int geometryShader, int fragmentShader) {

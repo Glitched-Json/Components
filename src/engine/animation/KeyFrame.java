@@ -11,7 +11,20 @@ import java.util.Map;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public final class KeyFrame {
-    public static final int LINEAR = 0, EASE_IN = 1, EASE_OUT = 2, EASE_IN_OUT = 3;
+    public static final int
+            LINEAR = 0,
+
+            EASE_IN = 1,
+            EASE_OUT = 2,
+            EASE_IN_OUT = 3,
+
+            EASE_IN_BACK = 4,
+            EASE_OUT_BACK = 5,
+            EASE_IN_OUT_BACK = 6,
+
+            EASE_IN_ELASTIC = 7,
+            EASE_OUT_ELASTIC = 8,
+            EASE_IN_OUT_ELASTIC = 9;
 
     private Map<String, Vector> fields = new HashMap<>();
     @Getter private final double time;
@@ -19,7 +32,7 @@ public final class KeyFrame {
     private double power = 1;
 
     public KeyFrame() { this(1); }
-    public KeyFrame(Number time) { this.time = time.doubleValue(); }
+    public KeyFrame(Number time) { this.time = Math.max(time.doubleValue(), 1e-9); }
 
     public KeyFrame clear() { fields.clear(); return this; }
     public KeyFrame set(String field, Number... values) {
@@ -46,10 +59,33 @@ public final class KeyFrame {
     public KeyFrame mix(KeyFrame keyFrameA, KeyFrame keyFrameB, double t) {
         t /= keyFrameB.time;
         final double timePower = t * keyFrameB.power;
+        final double pow = keyFrameB.power;
+        final double safePower =
+                (pow >= 0 && pow < 1e-3)
+                ? 1e-3 : (pow < 0 && pow >-1e-3)
+                ? -1e-3 : pow;
         final double tVar = switch (keyFrameB.mode) {
             case EASE_IN -> timePower / (timePower - t + 1);
-            case EASE_OUT -> -t / (timePower - keyFrameB.power - t);
-            case EASE_IN_OUT -> t < 0.5 ? timePower / (2*(timePower - t + 0.5)) : (0.5 - t) / (2*(timePower - keyFrameB.power - t + 0.5)) + 0.5;
+            case EASE_OUT -> -t / (timePower - pow - t);
+            case EASE_IN_OUT -> t < 0.5
+                    ? timePower / (2*(timePower - t + 0.5))
+                    : (0.5 - t) / (2*(timePower - pow - t + 0.5)) + 0.5;
+
+            case EASE_IN_BACK -> (pow + 1)*t*t*t - timePower*t;
+            case EASE_OUT_BACK -> 1 + (pow + 1) * Math.pow(t-1, 3) + pow * Math.pow(t-1, 2);
+            case EASE_IN_OUT_BACK -> t < 0.5
+                    ? (2*t)*(2*t) * ((pow + 1) * 2 * t - pow) / 2
+                    : ((2*t-2)*(2*t-2) * ((pow + 1) * (t * 2 - 2) + pow) + 2) / 2;
+
+            case EASE_IN_ELASTIC -> -Math.pow(2, 10*t-10) * Math.sin((t*10-10.75) * 2 * Math.PI / safePower);
+            case EASE_OUT_ELASTIC -> Math.pow(2, -10*t) * Math.sin((t*10 - 0.75) * 2 * Math.PI / safePower) + 1;
+            case EASE_IN_OUT_ELASTIC -> {
+                double v = Math.sin((20 * t - 11.125) * 2 * Math.PI / safePower);
+                yield t < 0.5
+                        ? -(Math.pow(2, 20*t-10) * v) / 2
+                        : (Math.pow(2, -20*t+10) * v) / 2 + 1;
+            }
+
             default -> t;
         };
 

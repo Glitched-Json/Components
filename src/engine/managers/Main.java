@@ -14,6 +14,7 @@ import static org.lwjgl.opengl.GL11.*;
 public class Main {
     private static final GameLogic game = new Game();
     @Getter private static boolean running = true;
+    private static int clearMask = GL_COLOR_BUFFER_BIT;
 
     private Main() {}
 
@@ -59,10 +60,6 @@ public class Main {
         double targetSRR = 1d / DataManager.getSetting("spatial_fps");         // spatial refresh rate
         boolean uncappedFPS = DataManager.getFlag("uncapped_FPS");
         boolean spacialMatchFPS = DataManager.getFlag("spatial_match_fps");
-
-        int clearMask = GL_COLOR_BUFFER_BIT;
-        if (DataManager.getFlag("depth_test")) clearMask |= GL_DEPTH_BUFFER_BIT;
-        else glDisable(GL_DEPTH_TEST);
 
         double tFPS = 0, elapsedTime;
         long start, end = System.nanoTime(), passedTime;
@@ -137,8 +134,8 @@ public class Main {
         SpatialManager.initialize();
         TextureAtlas.initialize();
 
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        if (DataManager.getFlag("depth_test")) { glEnable(GL_DEPTH_TEST); clearMask |= GL_DEPTH_BUFFER_BIT; }
+        if (DataManager.getFlag("blend_test")) { glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); }
 
         game.initialize();
     }
